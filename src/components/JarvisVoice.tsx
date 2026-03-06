@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -75,13 +75,23 @@ function useSpeechRecognition(onResult: (text: string) => void) {
     recognition.lang = "pt-BR";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
+    recognition.continuous = true;
 
     recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
+      const last = event.results.length - 1;
+      const transcript = event.results[last][0].transcript;
       onResult(transcript);
     };
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => {
+      // Auto-restart to keep always listening
+      if (recognitionRef.current) {
+        try { recognitionRef.current.start(); } catch { /* already started */ }
+      }
+    };
+    recognition.onerror = (e: any) => {
+      if (e.error === "no-speech" || e.error === "aborted") return;
+      console.error("Speech error:", e.error);
+    };
 
     recognitionRef.current = recognition;
     recognition.start();
@@ -89,7 +99,11 @@ function useSpeechRecognition(onResult: (text: string) => void) {
   }, [onResult]);
 
   const stopListening = useCallback(() => {
-    recognitionRef.current?.stop();
+    if (recognitionRef.current) {
+      const ref = recognitionRef.current;
+      recognitionRef.current = null;
+      ref.stop();
+    }
     setIsListening(false);
   }, []);
 
@@ -113,8 +127,8 @@ function speak(text: string, onEnd?: () => void) {
 }
 
 const JarvisVoice = () => {
-  const [state, setState] = useState<"idle" | "listening" | "thinking" | "speaking">("idle");
-  const [subtitle, setSubtitle] = useState("Toque para falar");
+  const [state, setState] = useState<"idle" | "listening" | "thinking" | "speaking">("listening");
+  const [subtitle, setSubtitle] = useState("Sempre ouvindo...");
   const [chatVisible, setChatVisible] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentResponse, setCurrentResponse] = useState("");
@@ -157,16 +171,16 @@ const JarvisVoice = () => {
         setCurrentResponse("");
         setState("speaking");
         speak(fullResponse, () => {
-          setState("idle");
-          setSubtitle("Toque para falar");
+          setState("listening");
+          setSubtitle("Sempre ouvindo...");
         });
       },
       onError: (err) => {
-        setState("idle");
+        setState("listening");
         setSubtitle(err);
         speak("Me desculpe senhor, encontrei um erro.", () => {
-          setState("idle");
-          setSubtitle("Toque para falar");
+          setState("listening");
+          setSubtitle("Sempre ouvindo...");
         });
       },
     });
@@ -174,17 +188,11 @@ const JarvisVoice = () => {
 
   const { isListening, startListening, stopListening } = useSpeechRecognition(handleVoiceResult);
 
-  const handleOrbClick = () => {
-    if (state === "listening" || isListening) {
-      stopListening();
-      setState("idle");
-      setSubtitle("Toque para falar");
-    } else if (state === "idle") {
-      setState("listening");
-      setSubtitle("Ouvindo...");
-      startListening();
-    }
-  };
+  // Auto-start listening on mount
+  useEffect(() => {
+    startListening();
+    return () => stopListening();
+  }, [startListening, stopListening]);
 
   return (
     <div className="fixed inset-0 bg-background flex flex-col items-center justify-center overflow-hidden select-none">
@@ -200,18 +208,13 @@ const JarvisVoice = () => {
         }}
       />
 
-      {/* Main orb - clickable */}
-      <motion.button
-        onClick={handleOrbClick}
-        className="relative z-10 cursor-pointer focus:outline-none"
-        whileTap={{ scale: 0.95 }}
-        aria-label="Activate J.A.R.V.I.S."
-      >
+      {/* Main orb */}
+      <div className="relative z-10">
         <AuroraOrb
           isListening={state === "listening"}
           isSpeaking={state === "speaking" || state === "thinking"}
         />
-      </motion.button>
+      </div>
 
       {/* Status text */}
       <motion.div
