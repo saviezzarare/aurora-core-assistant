@@ -100,15 +100,14 @@ function useSpeechRecognition(onResult: (text: string) => void) {
 function speak(text: string, onEnd?: () => void) {
   const clean = text.replace(/[*#_`]/g, "");
   const utterance = new SpeechSynthesisUtterance(clean);
-  utterance.lang = "en-GB";
+  utterance.lang = "pt-BR";
   utterance.rate = 1;
   utterance.pitch = 0.9;
-  // Try to find a British male voice
   const voices = speechSynthesis.getVoices();
-  const british = voices.find(v => v.lang.includes("en-GB") && v.name.toLowerCase().includes("male"))
-    || voices.find(v => v.lang.includes("en-GB"))
-    || voices.find(v => v.lang.includes("en"));
-  if (british) utterance.voice = british;
+  const ptVoice = voices.find(v => v.lang.includes("pt-BR") && v.name.toLowerCase().includes("male"))
+    || voices.find(v => v.lang.includes("pt-BR"))
+    || voices.find(v => v.lang.includes("pt"));
+  if (ptVoice) utterance.voice = ptVoice;
   if (onEnd) utterance.onend = onEnd;
   speechSynthesis.speak(utterance);
 }
@@ -126,14 +125,14 @@ const JarvisVoice = () => {
     if (lower.includes("abrir chat") || lower.includes("mostrar chat") || lower.includes("open chat") || lower.includes("show chat")) {
       setChatVisible(true);
       setSubtitle("Chat aberto");
-      speak("Chat interface activated, sir.", () => setState("idle"));
+      speak("Interface de chat ativada, senhor.", () => setState("idle"));
       setState("speaking");
       return;
     }
     if (lower.includes("fechar chat") || lower.includes("esconder chat") || lower.includes("close chat") || lower.includes("hide chat")) {
       setChatVisible(false);
       setSubtitle("Chat fechado");
-      speak("Chat interface deactivated, sir.", () => setState("idle"));
+      speak("Interface de chat desativada, senhor.", () => setState("idle"));
       setState("speaking");
       return;
     }
@@ -165,7 +164,7 @@ const JarvisVoice = () => {
       onError: (err) => {
         setState("idle");
         setSubtitle(err);
-        speak("I apologize sir, I encountered an error.", () => {
+        speak("Me desculpe senhor, encontrei um erro.", () => {
           setState("idle");
           setSubtitle("Toque para falar");
         });
