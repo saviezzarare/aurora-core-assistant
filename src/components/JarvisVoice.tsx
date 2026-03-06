@@ -75,13 +75,23 @@ function useSpeechRecognition(onResult: (text: string) => void) {
     recognition.lang = "pt-BR";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
+    recognition.continuous = true;
 
     recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
+      const last = event.results.length - 1;
+      const transcript = event.results[last][0].transcript;
       onResult(transcript);
     };
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => {
+      // Auto-restart to keep always listening
+      if (recognitionRef.current) {
+        try { recognitionRef.current.start(); } catch { /* already started */ }
+      }
+    };
+    recognition.onerror = (e: any) => {
+      if (e.error === "no-speech" || e.error === "aborted") return;
+      console.error("Speech error:", e.error);
+    };
 
     recognitionRef.current = recognition;
     recognition.start();
@@ -89,7 +99,11 @@ function useSpeechRecognition(onResult: (text: string) => void) {
   }, [onResult]);
 
   const stopListening = useCallback(() => {
-    recognitionRef.current?.stop();
+    if (recognitionRef.current) {
+      const ref = recognitionRef.current;
+      recognitionRef.current = null;
+      ref.stop();
+    }
     setIsListening(false);
   }, []);
 
