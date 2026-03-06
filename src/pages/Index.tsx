@@ -1,7 +1,7 @@
-import JarvisChat from "@/components/JarvisChat";
+import JarvisVoice from "@/components/JarvisVoice";
 
 const Index = () => {
-  return <JarvisChat />;
+  return <JarvisVoice />;
 };
 
 export default Index;
