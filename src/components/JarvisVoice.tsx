@@ -171,16 +171,16 @@ const JarvisVoice = () => {
         setCurrentResponse("");
         setState("speaking");
         speak(fullResponse, () => {
-          setState("idle");
-          setSubtitle("Toque para falar");
+          setState("listening");
+          setSubtitle("Sempre ouvindo...");
         });
       },
       onError: (err) => {
-        setState("idle");
+        setState("listening");
         setSubtitle(err);
         speak("Me desculpe senhor, encontrei um erro.", () => {
-          setState("idle");
-          setSubtitle("Toque para falar");
+          setState("listening");
+          setSubtitle("Sempre ouvindo...");
         });
       },
     });
@@ -188,17 +188,11 @@ const JarvisVoice = () => {
 
   const { isListening, startListening, stopListening } = useSpeechRecognition(handleVoiceResult);
 
-  const handleOrbClick = () => {
-    if (state === "listening" || isListening) {
-      stopListening();
-      setState("idle");
-      setSubtitle("Toque para falar");
-    } else if (state === "idle") {
-      setState("listening");
-      setSubtitle("Ouvindo...");
-      startListening();
-    }
-  };
+  // Auto-start listening on mount
+  useEffect(() => {
+    startListening();
+    return () => stopListening();
+  }, [startListening, stopListening]);
 
   return (
     <div className="fixed inset-0 bg-background flex flex-col items-center justify-center overflow-hidden select-none">
