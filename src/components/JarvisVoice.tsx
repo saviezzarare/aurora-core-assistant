@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -127,8 +127,8 @@ function speak(text: string, onEnd?: () => void) {
 }
 
 const JarvisVoice = () => {
-  const [state, setState] = useState<"idle" | "listening" | "thinking" | "speaking">("idle");
-  const [subtitle, setSubtitle] = useState("Toque para falar");
+  const [state, setState] = useState<"idle" | "listening" | "thinking" | "speaking">("listening");
+  const [subtitle, setSubtitle] = useState("Sempre ouvindo...");
   const [chatVisible, setChatVisible] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentResponse, setCurrentResponse] = useState("");
