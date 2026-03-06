@@ -208,18 +208,13 @@ const JarvisVoice = () => {
         }}
       />
 
-      {/* Main orb - clickable */}
-      <motion.button
-        onClick={handleOrbClick}
-        className="relative z-10 cursor-pointer focus:outline-none"
-        whileTap={{ scale: 0.95 }}
-        aria-label="Activate J.A.R.V.I.S."
-      >
+      {/* Main orb */}
+      <div className="relative z-10">
         <AuroraOrb
           isListening={state === "listening"}
           isSpeaking={state === "speaking" || state === "thinking"}
         />
-      </motion.button>
+      </div>
 
       {/* Status text */}
       <motion.div
