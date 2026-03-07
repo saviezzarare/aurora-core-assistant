@@ -170,6 +170,7 @@ const JarvisVoice = () => {
 
     streamChat({
       messages: newMessages,
+      sessionId: sessionId.current,
       onDelta: (chunk) => {
         fullResponse += chunk;
         setCurrentResponse(fullResponse);
