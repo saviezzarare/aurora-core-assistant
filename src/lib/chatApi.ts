@@ -10,6 +10,7 @@ export async function streamChat({
   onError,
 }: {
   messages: Msg[];
+  sessionId?: string;
   onDelta: (t: string) => void;
   onDone: () => void;
   onError: (e: string) => void;
@@ -20,7 +21,7 @@ export async function streamChat({
       "Content-Type": "application/json",
       Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
     },
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({ messages, session_id: sessionId }),
   });
 
   if (!resp.ok) {
