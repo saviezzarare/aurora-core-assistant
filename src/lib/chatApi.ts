@@ -4,6 +4,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/jarvis-chat`
 
 export async function streamChat({
   messages,
+  sessionId,
   onDelta,
   onDone,
   onError,
