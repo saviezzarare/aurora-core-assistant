@@ -6,6 +6,8 @@ interface AuroraOrbProps {
   isSpeaking?: boolean;
 }
 
+const ORB_SIZE = 425; // 340 * 1.25
+
 const AuroraOrb = ({ isListening = false, isSpeaking = false }: AuroraOrbProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
@@ -17,15 +19,14 @@ const AuroraOrb = ({ isListening = false, isSpeaking = false }: AuroraOrbProps) 
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
-    const size = 340;
+    const size = ORB_SIZE;
     canvas.width = size;
     canvas.height = size;
     const cx = size / 2;
     const cy = size / 2;
 
-    // Torus parameters
-    const R = 90; // major radius
-    const r = 45; // minor radius
+    const R = 112; // major radius (90 * 1.25)
+    const r = 56;  // minor radius (45 * 1.25)
     const rings = 20;
     const segments = 40;
 
@@ -34,37 +35,28 @@ const AuroraOrb = ({ isListening = false, isSpeaking = false }: AuroraOrbProps) 
     const draw = () => {
       time += 0.008;
       const isActive = activeRef.current;
-      const waveAmp = isActive ? 12 : 4;
+      const waveAmp = isActive ? 15 : 5;
       const waveSpeed = isActive ? 3 : 1;
       const glowAlpha = isActive ? 0.9 : 0.6;
 
       ctx.clearRect(0, 0, size, size);
 
-      // Draw toroidal wireframe
-      // Longitude lines (rings around the tube)
       for (let i = 0; i < rings; i++) {
         const u = (i / rings) * Math.PI * 2;
         ctx.beginPath();
         for (let j = 0; j <= segments; j++) {
           const v = (j / segments) * Math.PI * 2;
-
           const wave = Math.sin(v * 3 + time * waveSpeed + i * 0.5) * waveAmp;
           const rr = r + wave;
-
           const x3d = (R + rr * Math.cos(v)) * Math.cos(u);
           const y3d = (R + rr * Math.cos(v)) * Math.sin(u);
           const z3d = rr * Math.sin(v);
-
-          // Simple 3D rotation around X axis for perspective
           const rotX = time * 0.3;
           const y3dr = y3d * Math.cos(rotX) - z3d * Math.sin(rotX);
           const z3dr = y3d * Math.sin(rotX) + z3d * Math.cos(rotX);
-
-          // Project
-          const scale = 300 / (300 + z3dr);
+          const scale = 375 / (375 + z3dr);
           const px = cx + x3d * scale;
           const py = cy + y3dr * scale;
-
           if (j === 0) ctx.moveTo(px, py);
           else ctx.lineTo(px, py);
         }
@@ -74,28 +66,22 @@ const AuroraOrb = ({ isListening = false, isSpeaking = false }: AuroraOrbProps) 
         ctx.stroke();
       }
 
-      // Latitude lines (circles along the tube)
       for (let j = 0; j < segments; j++) {
         const v = (j / segments) * Math.PI * 2;
         ctx.beginPath();
         for (let i = 0; i <= rings; i++) {
           const u = (i / rings) * Math.PI * 2;
-
           const wave = Math.sin(v * 3 + time * waveSpeed + i * 0.5) * waveAmp;
           const rr = r + wave;
-
           const x3d = (R + rr * Math.cos(v)) * Math.cos(u);
           const y3d = (R + rr * Math.cos(v)) * Math.sin(u);
           const z3d = rr * Math.sin(v);
-
           const rotX = time * 0.3;
           const y3dr = y3d * Math.cos(rotX) - z3d * Math.sin(rotX);
           const z3dr = y3d * Math.sin(rotX) + z3d * Math.cos(rotX);
-
-          const scale = 300 / (300 + z3dr);
+          const scale = 375 / (375 + z3dr);
           const px = cx + x3d * scale;
           const py = cy + y3dr * scale;
-
           if (i === 0) ctx.moveTo(px, py);
           else ctx.lineTo(px, py);
         }
@@ -105,7 +91,6 @@ const AuroraOrb = ({ isListening = false, isSpeaking = false }: AuroraOrbProps) 
         ctx.stroke();
       }
 
-      // Center glow
       const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.5);
       grad.addColorStop(0, `hsla(187, 100%, 50%, ${isActive ? 0.08 : 0.03})`);
       grad.addColorStop(1, "transparent");
@@ -121,8 +106,7 @@ const AuroraOrb = ({ isListening = false, isSpeaking = false }: AuroraOrbProps) 
 
   return (
     <motion.div
-      className="relative flex items-center justify-center"
-      style={{ width: 340, height: 340 }}
+      className="relative flex items-center justify-center w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] md:w-[425px] md:h-[425px]"
       animate={{
         filter: active
           ? ["drop-shadow(0 0 20px hsla(187,100%,50%,0.4))", "drop-shadow(0 0 40px hsla(187,100%,50%,0.6))", "drop-shadow(0 0 20px hsla(187,100%,50%,0.4))"]
@@ -130,7 +114,7 @@ const AuroraOrb = ({ isListening = false, isSpeaking = false }: AuroraOrbProps) 
       }}
       transition={{ duration: active ? 0.8 : 3, repeat: Infinity, ease: "easeInOut" }}
     >
-      <canvas ref={canvasRef} style={{ width: 340, height: 340 }} />
+      <canvas ref={canvasRef} className="w-full h-full" style={{ width: '100%', height: '100%' }} />
     </motion.div>
   );
 };
