@@ -14,27 +14,36 @@ import { supabase } from "@/integrations/supabase/client";
 
 type Message = { role: "user" | "assistant"; content: string };
 
+const WAKE_WORD = "jarvis";
+
 const JarvisVoice = () => {
   useAdaptiveTheme();
 
   const [state, setState] = useState<"idle" | "listening" | "thinking" | "speaking">("idle");
-  const [subtitle, setSubtitle] = useState("Toque na aurora para ativar");
+  const [subtitle, setSubtitle] = useState("Toque na aurora ou diga 'Jarvis'");
   const [activated, setActivated] = useState(false);
   const [chatVisible, setChatVisible] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentResponse, setCurrentResponse] = useState("");
-  const [reminderCount, setReminderCount] = useState(0);
+  const [wakeMode, setWakeMode] = useState(false); // listening for wake word only
   const sessionId = useRef(getSessionId());
   const messagesRef = useRef<Message[]>([]);
   messagesRef.current = messages;
   const onResultRef = useRef<(t: string) => void>(() => {});
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadConversationHistory();
-    loadReminderCount();
     const interval = setInterval(checkReminders, 30000);
+    // Start wake word listening immediately
+    setWakeMode(true);
+    startListening();
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, currentResponse]);
 
   const loadConversationHistory = async () => {
     try {
@@ -94,15 +103,6 @@ const JarvisVoice = () => {
     }
   };
 
-  const loadReminderCount = async () => {
-    const { count } = await supabase
-      .from("reminders")
-      .select("*", { count: "exact", head: true })
-      .eq("session_id", sessionId.current)
-      .eq("completed", false);
-    setReminderCount(count || 0);
-  };
-
   const checkReminders = async () => {
     const now = new Date().toISOString();
     const { data } = await supabase
@@ -118,25 +118,104 @@ const JarvisVoice = () => {
         speak(`Senhor, lembrete: ${reminder.title}`, () => {});
         setSubtitle(`🔔 ${reminder.title}`);
       }
-      loadReminderCount();
     }
   };
 
   const handleActivate = () => {
     if (activated) return;
+    doActivate();
+  };
+
+  const doActivate = () => {
     setActivated(true);
-    setState("listening");
-    setSubtitle("Sempre ouvindo...");
-    startListening();
-    speak("J.A.R.V.I.S. ao seu dispor.", () => {
-      setState("listening");
-    });
+    setWakeMode(false);
     setState("speaking");
+    setSubtitle("Inicializando...");
+    speak("J.A.R.V.I.S. ao seu dispor, senhor.", () => {
+      setState("listening");
+      setSubtitle("Sempre ouvindo...");
+    });
+  };
+
+  const handleNavigationCommand = (text: string): boolean => {
+    const lower = text.toLowerCase();
+
+    // Open websites
+    const openMatch = lower.match(/(?:abrir?|abra|acessar?|acesse|ir para|vai para|open)\s+(.+)/);
+    if (openMatch) {
+      const site = openMatch[1].trim();
+      let url = site;
+      if (!url.startsWith("http")) {
+        // Try to convert common names
+        const siteMap: Record<string, string> = {
+          google: "https://www.google.com",
+          youtube: "https://www.youtube.com",
+          github: "https://www.github.com",
+          gmail: "https://mail.google.com",
+          twitter: "https://www.twitter.com",
+          x: "https://www.x.com",
+          instagram: "https://www.instagram.com",
+          facebook: "https://www.facebook.com",
+          linkedin: "https://www.linkedin.com",
+          whatsapp: "https://web.whatsapp.com",
+          spotify: "https://open.spotify.com",
+          netflix: "https://www.netflix.com",
+        };
+        const key = Object.keys(siteMap).find(k => site.includes(k));
+        if (key) {
+          url = siteMap[key];
+        } else {
+          url = `https://www.${site.replace(/\s+/g, "")}.com`;
+        }
+      }
+      window.open(url, "_blank");
+      speak(`Abrindo ${site}, senhor.`, () => {
+        setState("listening");
+        setSubtitle("Sempre ouvindo...");
+      });
+      setState("speaking");
+      return true;
+    }
+
+    // Search
+    const searchMatch = lower.match(/(?:pesquisar?|pesquise|buscar?|busque|procurar?|procure|search)\s+(.+)/);
+    if (searchMatch) {
+      const query = searchMatch[1].trim();
+      window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, "_blank");
+      speak(`Pesquisando por ${query}, senhor.`, () => {
+        setState("listening");
+        setSubtitle("Sempre ouvindo...");
+      });
+      setState("speaking");
+      return true;
+    }
+
+    return false;
   };
 
   const handleVoiceResult = useCallback((transcript: string) => {
-    const lower = transcript.toLowerCase();
+    const lower = transcript.toLowerCase().trim();
 
+    // Wake word detection when not activated
+    if (!activated || wakeMode) {
+      if (lower.includes(WAKE_WORD)) {
+        doActivate();
+        // If there's more text after the wake word, process it
+        const afterWake = lower.split(WAKE_WORD).pop()?.trim();
+        if (afterWake && afterWake.length > 3) {
+          setTimeout(() => processCommand(afterWake, transcript), 1500);
+        }
+        return;
+      }
+      // Not activated and no wake word - ignore
+      if (!activated) return;
+    }
+
+    processCommand(lower, transcript);
+  }, [activated, wakeMode]);
+
+  const processCommand = (lower: string, transcript: string) => {
+    // Chat toggle
     if (lower.includes("abrir chat") || lower.includes("mostrar chat") || lower.includes("open chat")) {
       setChatVisible(true);
       speak("Chat ativado, senhor.", () => setState("listening"));
@@ -150,6 +229,10 @@ const JarvisVoice = () => {
       return;
     }
 
+    // Navigation commands (handled client-side)
+    if (handleNavigationCommand(transcript)) return;
+
+    // All other commands go to AI
     setSubtitle(`"${transcript}"`);
     setState("thinking");
 
@@ -172,7 +255,6 @@ const JarvisVoice = () => {
         setMessages(prev => [...prev, { role: "assistant", content: fullResponse }]);
         setCurrentResponse("");
         saveMessage("assistant", fullResponse);
-        loadReminderCount();
         setState("speaking");
         speak(fullResponse, () => {
           setState("listening");
@@ -188,7 +270,7 @@ const JarvisVoice = () => {
         });
       },
     });
-  }, []);
+  };
 
   onResultRef.current = handleVoiceResult;
 
@@ -233,7 +315,7 @@ const JarvisVoice = () => {
         />
       </motion.div>
 
-      {/* Status text - minimal */}
+      {/* Status text */}
       <motion.div
         className="mt-3 text-center z-10 px-4"
         initial={{ opacity: 0 }}
@@ -241,7 +323,7 @@ const JarvisVoice = () => {
         transition={{ delay: 0.5 }}
       >
         <p className="text-[10px] sm:text-xs tracking-[0.3em] uppercase text-muted-foreground mb-1">
-          {!activated && "AGUARDANDO ATIVAÇÃO"}
+          {!activated && "DIGA 'JARVIS' OU TOQUE"}
           {activated && state === "idle" && "STANDBY"}
           {state === "listening" && "ESCUTANDO"}
           {state === "thinking" && "PROCESSANDO"}
@@ -322,6 +404,7 @@ const JarvisVoice = () => {
                 </div>
               </div>
             )}
+            <div ref={chatEndRef} />
           </motion.div>
         )}
       </AnimatePresence>

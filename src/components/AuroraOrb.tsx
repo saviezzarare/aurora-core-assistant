@@ -6,7 +6,7 @@ interface AuroraOrbProps {
   isSpeaking?: boolean;
 }
 
-const ORB_SIZE = 425; // 340 * 1.25
+const ORB_SIZE = 425;
 
 const AuroraOrb = ({ isListening = false, isSpeaking = false }: AuroraOrbProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -25,8 +25,8 @@ const AuroraOrb = ({ isListening = false, isSpeaking = false }: AuroraOrbProps) 
     const cx = size / 2;
     const cy = size / 2;
 
-    const R = 112; // major radius (90 * 1.25)
-    const r = 56;  // minor radius (45 * 1.25)
+    const R = 112;
+    const r = 56;
     const rings = 20;
     const segments = 40;
 
@@ -41,6 +41,7 @@ const AuroraOrb = ({ isListening = false, isSpeaking = false }: AuroraOrbProps) 
 
       ctx.clearRect(0, 0, size, size);
 
+      // Ring lines - deeper blue
       for (let i = 0; i < rings; i++) {
         const u = (i / rings) * Math.PI * 2;
         ctx.beginPath();
@@ -61,11 +62,12 @@ const AuroraOrb = ({ isListening = false, isSpeaking = false }: AuroraOrbProps) 
           else ctx.lineTo(px, py);
         }
         const alpha = 0.15 + 0.1 * Math.sin(time + i);
-        ctx.strokeStyle = `hsla(187, 100%, 65%, ${alpha * glowAlpha})`;
+        ctx.strokeStyle = `hsla(215, 100%, 60%, ${alpha * glowAlpha})`;
         ctx.lineWidth = 0.8;
         ctx.stroke();
       }
 
+      // Segment lines
       for (let j = 0; j < segments; j++) {
         const v = (j / segments) * Math.PI * 2;
         ctx.beginPath();
@@ -86,13 +88,14 @@ const AuroraOrb = ({ isListening = false, isSpeaking = false }: AuroraOrbProps) 
           else ctx.lineTo(px, py);
         }
         const alpha = 0.12 + 0.08 * Math.sin(time * 1.5 + j * 0.3);
-        ctx.strokeStyle = `hsla(187, 100%, 70%, ${alpha * glowAlpha})`;
+        ctx.strokeStyle = `hsla(210, 100%, 65%, ${alpha * glowAlpha})`;
         ctx.lineWidth = 0.6;
         ctx.stroke();
       }
 
+      // Core glow
       const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.5);
-      grad.addColorStop(0, `hsla(187, 100%, 50%, ${isActive ? 0.08 : 0.03})`);
+      grad.addColorStop(0, `hsla(215, 100%, 55%, ${isActive ? 0.1 : 0.04})`);
       grad.addColorStop(1, "transparent");
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, size, size);
@@ -109,8 +112,8 @@ const AuroraOrb = ({ isListening = false, isSpeaking = false }: AuroraOrbProps) 
       className="relative flex items-center justify-center w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] md:w-[425px] md:h-[425px]"
       animate={{
         filter: active
-          ? ["drop-shadow(0 0 20px hsla(187,100%,50%,0.4))", "drop-shadow(0 0 40px hsla(187,100%,50%,0.6))", "drop-shadow(0 0 20px hsla(187,100%,50%,0.4))"]
-          : "drop-shadow(0 0 15px hsla(187,100%,50%,0.2))",
+          ? ["drop-shadow(0 0 20px hsla(215,100%,55%,0.4))", "drop-shadow(0 0 40px hsla(215,100%,55%,0.6))", "drop-shadow(0 0 20px hsla(215,100%,55%,0.4))"]
+          : "drop-shadow(0 0 15px hsla(215,100%,55%,0.2))",
       }}
       transition={{ duration: active ? 0.8 : 3, repeat: Infinity, ease: "easeInOut" }}
     >
