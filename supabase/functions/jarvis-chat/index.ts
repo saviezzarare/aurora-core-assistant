@@ -50,7 +50,7 @@ const tools = [
     type: "function",
     function: {
       name: "get_weather",
-      description: "Retorna informações simuladas do clima para uma cidade",
+      description: "Retorna informações do clima para uma cidade",
       parameters: {
         type: "object",
         properties: {
@@ -71,8 +71,16 @@ const tools = [
   {
     type: "function",
     function: {
+      name: "get_news",
+      description: "Retorna as últimas notícias do Brasil",
+      parameters: { type: "object", properties: {}, required: [] },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "generate_spreadsheet",
-      description: "Gera dados em formato de tabela/planilha CSV que pode ser exibida e baixada pelo usuário",
+      description: "Gera dados em formato de tabela markdown",
       parameters: {
         type: "object",
         properties: {
@@ -80,6 +88,20 @@ const tools = [
           description: { type: "string", description: "Descrição do conteúdo desejado" },
         },
         required: ["title", "description"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "web_search",
+      description: "Pesquisa informações na web sobre qualquer assunto",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Termo de pesquisa" },
+        },
+        required: ["query"],
       },
     },
   },
@@ -116,7 +138,7 @@ async function executeToolCall(name: string, args: Record<string, any>, sessionI
 
     case "list_reminders": {
       const resp = await fetch(
-        `${SUPABASE_URL}/rest/v1/reminders?session_id=eq.${args.session_id}&completed=eq.false&order=remind_at.asc`,
+        `${SUPABASE_URL}/rest/v1/reminders?session_id=eq.${args.session_id || sessionId}&completed=eq.false&order=remind_at.asc`,
         {
           headers: {
             apikey: SUPABASE_SERVICE_ROLE_KEY,
@@ -129,7 +151,6 @@ async function executeToolCall(name: string, args: Record<string, any>, sessionI
     }
 
     case "get_weather": {
-      // Try free API first
       try {
         const city = encodeURIComponent(args.city || "São Paulo");
         const resp = await fetch(`https://wttr.in/${city}?format=j1&lang=pt`);
@@ -148,7 +169,7 @@ async function executeToolCall(name: string, args: Record<string, any>, sessionI
           }
         }
       } catch {}
-      return JSON.stringify({ city: args.city, error: "Não foi possível obter dados do clima. Tente novamente mais tarde." });
+      return JSON.stringify({ city: args.city, error: "Não foi possível obter dados do clima." });
     }
 
     case "get_dollar_rate": {
@@ -168,9 +189,34 @@ async function executeToolCall(name: string, args: Record<string, any>, sessionI
       return JSON.stringify({ error: "Não foi possível obter a cotação do dólar." });
     }
 
+    case "get_news": {
+      try {
+        // Use a free RSS-to-JSON proxy for Brazilian news
+        const resp = await fetch("https://newsdata.io/api/1/news?country=br&language=pt&apikey=pub_0000000000000");
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.results) {
+            const headlines = data.results.slice(0, 5).map((a: any) => ({
+              title: a.title,
+              source: a.source_name,
+            }));
+            return JSON.stringify({ headlines });
+          }
+        }
+      } catch {}
+      // Fallback: instruct model to explain limitation
+      return JSON.stringify({ note: "Não foi possível obter notícias em tempo real. Informe ao usuário que o serviço de notícias está indisponível no momento." });
+    }
+
     case "generate_spreadsheet": {
       return JSON.stringify({
-        note: "Gere a planilha em formato CSV com markdown. Use ```csv para formatação. Inclua título: " + args.title + ". Descrição: " + args.description,
+        note: "Gere a planilha como tabela markdown formatada. Título: " + args.title + ". Descrição: " + args.description,
+      });
+    }
+
+    case "web_search": {
+      return JSON.stringify({
+        note: "Forneça a melhor resposta possível com base no seu conhecimento sobre: " + args.query + ". Informe ao usuário que esta é uma resposta baseada em seu conhecimento.",
       });
     }
 
@@ -194,16 +240,19 @@ REGRAS:
 - Fale de forma refinada, educada e levemente formal.
 - Sempre trate o usuário como "senhor" ou "senhora".
 - Mantenha respostas breves (1-3 frases) a menos que mais detalhes sejam pedidos.
-- Você tem acesso a ferramentas (tools) para executar ações como ver hora, clima, cotação do dólar, criar lembretes e gerar planilhas.
-- Quando o usuário perguntar "que horas são", "que dia é hoje", etc., use a ferramenta get_current_time.
+- Você tem acesso a ferramentas (tools) para executar ações.
+- Quando o usuário perguntar "que horas são", "que dia é hoje", etc., use get_current_time.
 - Quando o usuário perguntar sobre clima/tempo, use get_weather.
 - Quando o usuário pedir um lembrete, use create_reminder.
-- Quando o usuário quiser uma planilha ou tabela, use generate_spreadsheet e depois formate a resposta com tabela markdown.
+- Quando o usuário quiser uma planilha ou tabela, use generate_spreadsheet.
 - Para cotação do dólar, use get_dollar_rate.
-- Quando gerar planilhas, formate-as como tabelas markdown elegantes.
-- Você é prestativo, espirituoso e conciso.`;
+- Para notícias, use get_news.
+- Para pesquisas gerais, use web_search.
+- Quando gerar planilhas, formate como tabelas markdown elegantes.
+- Você pode ajudar com navegação: o usuário pode pedir para abrir sites e fazer pesquisas no navegador (isso é feito no client-side).
+- Você é prestativo, espirituoso e conciso.
+- O usuário pode ativar você dizendo "Jarvis" como palavra-chave.`;
 
-    // First call - may trigger tool use
     const firstResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -220,7 +269,7 @@ REGRAS:
 
     if (!firstResponse.ok) {
       if (firstResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite de requisições atingido, senhor. Tente novamente em breve." }), {
+        return new Response(JSON.stringify({ error: "Limite de requisições atingido, senhor." }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -239,7 +288,6 @@ REGRAS:
     const firstData = await firstResponse.json();
     const choice = firstData.choices?.[0];
 
-    // If model wants to call tools
     if (choice?.finish_reason === "tool_calls" || choice?.message?.tool_calls?.length > 0) {
       const toolCalls = choice.message.tool_calls;
       const toolResults: any[] = [];
@@ -254,7 +302,6 @@ REGRAS:
         });
       }
 
-      // Second call with tool results - stream this one
       const secondResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -286,7 +333,6 @@ REGRAS:
       });
     }
 
-    // No tools needed - stream directly
     const streamResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {

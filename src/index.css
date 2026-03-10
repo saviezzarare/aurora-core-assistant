@@ -2,82 +2,80 @@
 @tailwind components;
 @tailwind utilities;
 
-
-
 @layer base {
   :root {
-    --background: 240 100% 2%;
-    --foreground: 187 100% 75%;
+    --background: 225 100% 2%;
+    --foreground: 210 100% 78%;
 
-    --card: 240 80% 5%;
-    --card-foreground: 187 100% 75%;
+    --card: 225 80% 5%;
+    --card-foreground: 210 100% 78%;
 
-    --popover: 240 80% 5%;
-    --popover-foreground: 187 100% 75%;
+    --popover: 225 80% 5%;
+    --popover-foreground: 210 100% 78%;
 
-    --primary: 187 100% 50%;
-    --primary-foreground: 240 100% 2%;
+    --primary: 215 100% 55%;
+    --primary-foreground: 225 100% 2%;
 
     --secondary: 220 80% 15%;
-    --secondary-foreground: 187 100% 75%;
+    --secondary-foreground: 210 100% 78%;
 
     --muted: 220 60% 10%;
-    --muted-foreground: 187 40% 45%;
+    --muted-foreground: 215 40% 50%;
 
-    --accent: 187 100% 35%;
-    --accent-foreground: 240 100% 2%;
+    --accent: 215 100% 40%;
+    --accent-foreground: 225 100% 2%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 220 60% 15%;
     --input: 220 60% 12%;
-    --ring: 187 100% 50%;
+    --ring: 215 100% 55%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 240 80% 4%;
-    --sidebar-foreground: 187 100% 75%;
-    --sidebar-primary: 187 100% 50%;
-    --sidebar-primary-foreground: 240 100% 2%;
+    --sidebar-background: 225 80% 4%;
+    --sidebar-foreground: 210 100% 78%;
+    --sidebar-primary: 215 100% 55%;
+    --sidebar-primary-foreground: 225 100% 2%;
     --sidebar-accent: 220 60% 10%;
-    --sidebar-accent-foreground: 187 100% 75%;
+    --sidebar-accent-foreground: 210 100% 78%;
     --sidebar-border: 220 60% 15%;
-    --sidebar-ring: 187 100% 50%;
+    --sidebar-ring: 215 100% 55%;
 
-    --aurora-dark: 240 100% 10%;
-    --aurora-cyan: 187 100% 50%;
-    --aurora-glow: 187 100% 70%;
+    --aurora-dark: 225 100% 8%;
+    --aurora-cyan: 215 100% 55%;
+    --aurora-glow: 210 100% 72%;
   }
 
   .dark {
-    --background: 240 100% 2%;
-    --foreground: 187 100% 75%;
-    --card: 240 80% 5%;
-    --card-foreground: 187 100% 75%;
-    --popover: 240 80% 5%;
-    --popover-foreground: 187 100% 75%;
-    --primary: 187 100% 50%;
-    --primary-foreground: 240 100% 2%;
+    --background: 225 100% 2%;
+    --foreground: 210 100% 78%;
+    --card: 225 80% 5%;
+    --card-foreground: 210 100% 78%;
+    --popover: 225 80% 5%;
+    --popover-foreground: 210 100% 78%;
+    --primary: 215 100% 55%;
+    --primary-foreground: 225 100% 2%;
     --secondary: 220 80% 15%;
-    --secondary-foreground: 187 100% 75%;
+    --secondary-foreground: 210 100% 78%;
     --muted: 220 60% 10%;
-    --muted-foreground: 187 40% 45%;
-    --accent: 187 100% 35%;
-    --accent-foreground: 240 100% 2%;
+    --muted-foreground: 215 40% 50%;
+    --accent: 215 100% 40%;
+    --accent-foreground: 225 100% 2%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     --border: 220 60% 15%;
     --input: 220 60% 12%;
-    --ring: 187 100% 50%;
-    --sidebar-background: 240 80% 4%;
-    --sidebar-foreground: 187 100% 75%;
-    --sidebar-primary: 187 100% 50%;
-    --sidebar-primary-foreground: 240 100% 2%;
+    --ring: 215 100% 55%;
+    --sidebar-background: 225 80% 4%;
+    --sidebar-foreground: 210 100% 78%;
+    --sidebar-primary: 215 100% 55%;
+    --sidebar-primary-foreground: 225 100% 2%;
     --sidebar-accent: 220 60% 10%;
-    --sidebar-accent-foreground: 187 100% 75%;
+    --sidebar-accent-foreground: 210 100% 78%;
     --sidebar-border: 220 60% 15%;
-    --sidebar-ring: 187 100% 50%;
+    --sidebar-ring: 215 100% 55%;
   }
 }
 
@@ -100,12 +98,12 @@
 @layer utilities {
   .aurora-glow {
     box-shadow: 
-      0 0 20px hsl(187 100% 50% / 0.15),
-      0 0 60px hsl(187 100% 50% / 0.08),
-      0 0 120px hsl(240 100% 10% / 0.2);
+      0 0 20px hsl(215 100% 55% / 0.15),
+      0 0 60px hsl(215 100% 55% / 0.08),
+      0 0 120px hsl(225 100% 8% / 0.2);
   }
 
   .text-glow {
-    text-shadow: 0 0 10px hsl(187 100% 50% / 0.5), 0 0 30px hsl(187 100% 50% / 0.2);
+    text-shadow: 0 0 10px hsl(215 100% 55% / 0.5), 0 0 30px hsl(215 100% 55% / 0.2);
   }
 }

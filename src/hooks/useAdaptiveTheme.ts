@@ -2,10 +2,10 @@ import { useEffect } from "react";
 
 /**
  * Subtly shifts CSS custom properties based on time of day
- * Night (0-5): deep blue, low brightness
- * Morning (6-11): warmer cyan
- * Afternoon (12-17): standard cyan
- * Evening (18-23): deeper, purple-tinted
+ * Night (0-5): deep indigo-blue
+ * Morning (6-11): warmer blue
+ * Afternoon (12-17): vivid blue
+ * Evening (18-23): deeper purple-blue
  */
 export function useAdaptiveTheme() {
   useEffect(() => {
@@ -14,30 +14,26 @@ export function useAdaptiveTheme() {
       const root = document.documentElement.style;
 
       if (h >= 0 && h < 6) {
-        // Night - deeper, more blue
-        root.setProperty("--primary", "200 80% 45%");
-        root.setProperty("--aurora-cyan", "200 80% 45%");
-        root.setProperty("--foreground", "200 60% 65%");
+        root.setProperty("--primary", "225 80% 48%");
+        root.setProperty("--aurora-cyan", "225 80% 48%");
+        root.setProperty("--foreground", "220 60% 68%");
       } else if (h >= 6 && h < 12) {
-        // Morning - warm cyan
-        root.setProperty("--primary", "180 100% 50%");
-        root.setProperty("--aurora-cyan", "180 100% 50%");
-        root.setProperty("--foreground", "180 80% 75%");
+        root.setProperty("--primary", "210 100% 55%");
+        root.setProperty("--aurora-cyan", "210 100% 55%");
+        root.setProperty("--foreground", "210 80% 78%");
       } else if (h >= 12 && h < 18) {
-        // Afternoon - standard vivid cyan
-        root.setProperty("--primary", "187 100% 50%");
-        root.setProperty("--aurora-cyan", "187 100% 50%");
-        root.setProperty("--foreground", "187 100% 75%");
+        root.setProperty("--primary", "215 100% 55%");
+        root.setProperty("--aurora-cyan", "215 100% 55%");
+        root.setProperty("--foreground", "210 100% 78%");
       } else {
-        // Evening - purple tinted
-        root.setProperty("--primary", "210 90% 55%");
-        root.setProperty("--aurora-cyan", "210 90% 55%");
-        root.setProperty("--foreground", "210 70% 72%");
+        root.setProperty("--primary", "230 85% 52%");
+        root.setProperty("--aurora-cyan", "230 85% 52%");
+        root.setProperty("--foreground", "225 70% 72%");
       }
     };
 
     update();
-    const interval = setInterval(update, 60000); // check every minute
+    const interval = setInterval(update, 60000);
     return () => clearInterval(interval);
   }, []);
 }
