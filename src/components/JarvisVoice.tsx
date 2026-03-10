@@ -5,7 +5,6 @@ import ReactMarkdown from "react-markdown";
 import AuroraOrb from "./AuroraOrb";
 import FloatingParticles from "./FloatingParticles";
 import AudioVisualizer from "./AudioVisualizer";
-import HudOverlay from "./HudOverlay";
 import { useAdaptiveTheme } from "@/hooks/useAdaptiveTheme";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { speak } from "@/lib/tts";
@@ -28,19 +27,17 @@ const JarvisVoice = () => {
   const sessionId = useRef(getSessionId());
   const messagesRef = useRef<Message[]>([]);
   messagesRef.current = messages;
+  const onResultRef = useRef<(t: string) => void>(() => {});
 
-  // Load conversation history on mount
   useEffect(() => {
     loadConversationHistory();
     loadReminderCount();
-    // Check reminders every 30 seconds
     const interval = setInterval(checkReminders, 30000);
     return () => clearInterval(interval);
   }, []);
 
   const loadConversationHistory = async () => {
     try {
-      // Get or create conversation for this session
       const { data: convos } = await supabase
         .from("conversations")
         .select("id")
@@ -67,7 +64,6 @@ const JarvisVoice = () => {
 
   const saveMessage = async (role: string, content: string) => {
     try {
-      // Get or create conversation
       let { data: convos } = await supabase
         .from("conversations")
         .select("id")
@@ -118,9 +114,7 @@ const JarvisVoice = () => {
 
     if (data && data.length > 0) {
       for (const reminder of data) {
-        // Mark as completed
         await supabase.from("reminders").update({ completed: true }).eq("id", reminder.id);
-        // Announce
         speak(`Senhor, lembrete: ${reminder.title}`, () => {});
         setSubtitle(`🔔 ${reminder.title}`);
       }
@@ -134,7 +128,7 @@ const JarvisVoice = () => {
     setState("listening");
     setSubtitle("Sempre ouvindo...");
     startListening();
-    speak("Boa noite, senhor. J.A.R.V.I.S. ao seu dispor.", () => {
+    speak("J.A.R.V.I.S. ao seu dispor.", () => {
       setState("listening");
     });
     setState("speaking");
@@ -143,16 +137,15 @@ const JarvisVoice = () => {
   const handleVoiceResult = useCallback((transcript: string) => {
     const lower = transcript.toLowerCase();
 
-    // Voice commands
     if (lower.includes("abrir chat") || lower.includes("mostrar chat") || lower.includes("open chat")) {
       setChatVisible(true);
-      speak("Interface de chat ativada, senhor.", () => setState("listening"));
+      speak("Chat ativado, senhor.", () => setState("listening"));
       setState("speaking");
       return;
     }
     if (lower.includes("fechar chat") || lower.includes("esconder chat") || lower.includes("close chat")) {
       setChatVisible(false);
-      speak("Interface de chat desativada, senhor.", () => setState("listening"));
+      speak("Chat desativado.", () => setState("listening"));
       setState("speaking");
       return;
     }
@@ -189,7 +182,7 @@ const JarvisVoice = () => {
       onError: (err) => {
         setState("listening");
         setSubtitle(err);
-        speak("Me desculpe senhor, encontrei um erro.", () => {
+        speak("Desculpe senhor, encontrei um erro.", () => {
           setState("listening");
           setSubtitle("Sempre ouvindo...");
         });
@@ -197,7 +190,11 @@ const JarvisVoice = () => {
     });
   }, []);
 
-  const { startListening, stopListening } = useSpeechRecognition(handleVoiceResult);
+  onResultRef.current = handleVoiceResult;
+
+  const { startListening, stopListening } = useSpeechRecognition(
+    useCallback((t: string) => onResultRef.current(t), [])
+  );
 
   return (
     <div className="fixed inset-0 bg-background flex flex-col items-center justify-center overflow-hidden select-none">
@@ -213,13 +210,9 @@ const JarvisVoice = () => {
         }}
       />
 
-      {/* Floating particles */}
       <FloatingParticles isActive={state === "listening" || state === "speaking"} />
 
-      {/* HUD Overlay */}
-      <HudOverlay state={state} reminderCount={reminderCount} />
-
-      {/* Main orb - clickable to activate */}
+      {/* Main orb */}
       <div className="relative z-10 cursor-pointer" onClick={handleActivate}>
         <AuroraOrb
           isListening={state === "listening"}
@@ -229,7 +222,7 @@ const JarvisVoice = () => {
 
       {/* Audio Visualizer */}
       <motion.div
-        className="mt-4 z-10"
+        className="mt-2 sm:mt-4 z-10"
         initial={{ opacity: 0 }}
         animate={{ opacity: activated ? 1 : 0 }}
         transition={{ delay: 0.5 }}
@@ -240,46 +233,44 @@ const JarvisVoice = () => {
         />
       </motion.div>
 
-      {/* Status text */}
+      {/* Status text - minimal */}
       <motion.div
-        className="mt-4 text-center z-10"
+        className="mt-3 text-center z-10 px-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
-        <p className="text-xs tracking-[0.4em] uppercase text-muted-foreground mb-2 font-['Orbitron']">
+        <p className="text-[10px] sm:text-xs tracking-[0.3em] uppercase text-muted-foreground mb-1">
           {!activated && "AGUARDANDO ATIVAÇÃO"}
           {activated && state === "idle" && "STANDBY"}
           {state === "listening" && "ESCUTANDO"}
           {state === "thinking" && "PROCESSANDO"}
           {state === "speaking" && "RESPONDENDO"}
         </p>
-        <p className="text-sm text-foreground/60 max-w-xs mx-auto">
+        <p className="text-xs sm:text-sm text-foreground/60 max-w-[280px] sm:max-w-xs mx-auto">
           {subtitle}
         </p>
       </motion.div>
 
       {/* Bottom controls */}
-      <div className="absolute bottom-8 flex items-center gap-4 z-10">
-        {/* Mic indicator */}
+      <div className="absolute bottom-6 sm:bottom-8 flex items-center gap-4 z-10">
         <motion.div animate={{ opacity: state === "listening" ? 1 : 0.3 }}>
-          <div className={`p-3 rounded-full border transition-colors ${
+          <div className={`p-2.5 sm:p-3 rounded-full border transition-colors ${
             state === "listening" ? "border-primary/50 bg-primary/10" : "border-border/30 bg-transparent"
           }`}>
-            <Mic className={`w-5 h-5 ${state === "listening" ? "text-primary" : "text-muted-foreground"}`} />
+            <Mic className={`w-4 h-4 sm:w-5 sm:h-5 ${state === "listening" ? "text-primary" : "text-muted-foreground"}`} />
           </div>
         </motion.div>
 
-        {/* Chat toggle */}
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={() => setChatVisible(!chatVisible)}
-          className={`p-3 rounded-full border transition-colors ${
+          className={`p-2.5 sm:p-3 rounded-full border transition-colors ${
             chatVisible ? "border-primary/50 bg-primary/10 text-primary" : "border-border/30 text-muted-foreground hover:border-primary/30"
           }`}
         >
-          {chatVisible ? <X className="w-5 h-5" /> : <MessageSquare className="w-5 h-5" />}
+          {chatVisible ? <X className="w-4 h-4 sm:w-5 sm:h-5" /> : <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />}
         </motion.button>
       </div>
 
@@ -291,10 +282,10 @@ const JarvisVoice = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 40, scale: 0.95 }}
             transition={{ type: "spring", damping: 25 }}
-            className="absolute bottom-24 left-4 right-4 max-w-lg mx-auto max-h-[40vh] overflow-y-auto rounded-xl border border-border/40 bg-card/90 backdrop-blur-xl p-4 z-20"
+            className="absolute bottom-20 sm:bottom-24 left-3 right-3 sm:left-4 sm:right-4 max-w-lg mx-auto max-h-[45vh] overflow-y-auto rounded-xl border border-border/40 bg-card/90 backdrop-blur-xl p-3 sm:p-4 z-20"
           >
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-muted-foreground tracking-wider uppercase font-['Orbitron']">
+              <p className="text-[10px] sm:text-xs text-muted-foreground tracking-wider uppercase">
                 Registro de Conversas
               </p>
               <span className="text-[10px] text-muted-foreground/50">
@@ -303,7 +294,7 @@ const JarvisVoice = () => {
             </div>
 
             {messages.length === 0 && (
-              <p className="text-sm text-muted-foreground/50 text-center py-4">
+              <p className="text-xs sm:text-sm text-muted-foreground/50 text-center py-4">
                 Nenhuma conversa ainda. Fale com o J.A.R.V.I.S.!
               </p>
             )}
@@ -313,7 +304,7 @@ const JarvisVoice = () => {
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   {msg.role === "user" ? "Você" : "J.A.R.V.I.S."}
                 </span>
-                <div className={`text-sm mt-0.5 ${msg.role === "user" ? "text-foreground/70" : "text-foreground"}`}>
+                <div className={`text-xs sm:text-sm mt-0.5 ${msg.role === "user" ? "text-foreground/70" : "text-foreground"}`}>
                   {msg.role === "assistant" ? (
                     <div className="prose prose-sm prose-invert max-w-none [&_p]:m-0 [&_strong]:text-primary [&_table]:text-xs [&_th]:text-primary [&_td]:border-border/30">
                       <ReactMarkdown>{msg.content}</ReactMarkdown>
@@ -326,7 +317,7 @@ const JarvisVoice = () => {
             {currentResponse && (
               <div className="mb-3 text-left">
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">J.A.R.V.I.S.</span>
-                <div className="text-sm mt-0.5 text-foreground prose prose-sm prose-invert max-w-none [&_p]:m-0 [&_strong]:text-primary">
+                <div className="text-xs sm:text-sm mt-0.5 text-foreground prose prose-sm prose-invert max-w-none [&_p]:m-0 [&_strong]:text-primary">
                   <ReactMarkdown>{currentResponse}</ReactMarkdown>
                 </div>
               </div>
