@@ -9,7 +9,7 @@ const AudioVisualizer = ({ isActive, mode }: AudioVisualizerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const dataRef = useRef<Uint8Array>(new Uint8Array(64));
+  const dataRef = useRef<Uint8Array<ArrayBuffer>>(new Uint8Array(64));
 
   useEffect(() => {
     if (mode === "listening" && isActive) {
