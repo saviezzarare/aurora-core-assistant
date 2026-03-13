@@ -9,7 +9,7 @@ const AudioVisualizer = ({ isActive, mode }: AudioVisualizerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const dataRef = useRef<Uint8Array<ArrayBuffer>>(new Uint8Array(64));
+  const dataRef = useRef<Uint8Array>(new Uint8Array(64));
 
   useEffect(() => {
     if (mode === "listening" && isActive) {
@@ -63,13 +63,12 @@ const AudioVisualizer = ({ isActive, mode }: AudioVisualizerProps) => {
         const x = i * (barW + 2);
 
         const alpha = 0.3 + amplitude * 0.7;
-        const lightness = 50 + amplitude * 20;
+        const lightness = 35 + amplitude * 25;
 
-        ctx.fillStyle = `hsla(187, 100%, ${lightness}%, ${alpha})`;
+        ctx.fillStyle = `hsla(150, 100%, ${lightness}%, ${alpha})`;
         ctx.fillRect(x, cy - barH / 2, barW, barH);
 
-        // Glow
-        ctx.fillStyle = `hsla(187, 100%, 70%, ${alpha * 0.2})`;
+        ctx.fillStyle = `hsla(150, 100%, 55%, ${alpha * 0.15})`;
         ctx.fillRect(x - 1, cy - barH / 2 - 1, barW + 2, barH + 2);
       }
 

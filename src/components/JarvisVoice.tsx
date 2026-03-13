@@ -4,6 +4,7 @@ import { Mic, MessageSquare, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import AuroraOrb from "./AuroraOrb";
 import FloatingParticles from "./FloatingParticles";
+import VerticalStreaks from "./VerticalStreaks";
 import AudioVisualizer from "./AudioVisualizer";
 import { useAdaptiveTheme } from "@/hooks/useAdaptiveTheme";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
