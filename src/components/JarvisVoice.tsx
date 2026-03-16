@@ -1,17 +1,40 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MessageSquare, X } from "lucide-react";
+import { Mic, MessageSquare, X, Menu, ArrowLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import AuroraOrb from "./AuroraOrb";
 import FloatingParticles from "./FloatingParticles";
 import VerticalStreaks from "./VerticalStreaks";
 import AudioVisualizer from "./AudioVisualizer";
+import SideMenu from "./commercial/SideMenu";
 import { useAdaptiveTheme } from "@/hooks/useAdaptiveTheme";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { speak } from "@/lib/tts";
 import { streamChat } from "@/lib/chatApi";
 import { getSessionId } from "@/lib/sessionId";
+import { interpretCommand, type ModuleId } from "@/lib/commandInterpreter";
 import { supabase } from "@/integrations/supabase/client";
+
+// Lazy load commercial modules
+const DashboardComercial = lazy(() => import("./commercial/DashboardComercial"));
+const PerformanceEquipe = lazy(() => import("./commercial/PerformanceEquipe"));
+const FunilComercial = lazy(() => import("./commercial/FunilComercial"));
+const PrevisaoVendas = lazy(() => import("./commercial/PrevisaoVendas"));
+const MetasComerciais = lazy(() => import("./commercial/MetasComerciais"));
+const Relatorios = lazy(() => import("./commercial/Relatorios"));
+const SimulacoesEstrategicas = lazy(() => import("./commercial/SimulacoesEstrategicas"));
+const AlertasEstrategicos = lazy(() => import("./commercial/AlertasEstrategicos"));
+
+const moduleComponents: Record<ModuleId, React.LazyExoticComponent<any>> = {
+  dashboard: DashboardComercial,
+  performance: PerformanceEquipe,
+  funil: FunilComercial,
+  previsao: PrevisaoVendas,
+  metas: MetasComerciais,
+  relatorios: Relatorios,
+  simulacoes: SimulacoesEstrategicas,
+  alertas: AlertasEstrategicos,
+};
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -24,9 +47,11 @@ const JarvisVoice = () => {
   const [subtitle, setSubtitle] = useState("Toque na aurora ou diga 'Jarvis'");
   const [activated, setActivated] = useState(false);
   const [chatVisible, setChatVisible] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [activeModule, setActiveModule] = useState<ModuleId | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentResponse, setCurrentResponse] = useState("");
-  const [wakeMode, setWakeMode] = useState(false); // listening for wake word only
+  const [wakeMode, setWakeMode] = useState(false);
   const sessionId = useRef(getSessionId());
   const messagesRef = useRef<Message[]>([]);
   messagesRef.current = messages;
@@ -36,7 +61,6 @@ const JarvisVoice = () => {
   useEffect(() => {
     loadConversationHistory();
     const interval = setInterval(checkReminders, 30000);
-    // Start wake word listening immediately
     setWakeMode(true);
     startListening();
     return () => clearInterval(interval);
@@ -94,11 +118,7 @@ const JarvisVoice = () => {
         await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", convoId);
       }
 
-      await supabase.from("chat_messages").insert({
-        conversation_id: convoId,
-        role,
-        content,
-      });
+      await supabase.from("chat_messages").insert({ conversation_id: convoId, role, content });
     } catch (e) {
       console.error("Error saving message:", e);
     }
@@ -141,52 +161,37 @@ const JarvisVoice = () => {
   const handleNavigationCommand = (text: string): boolean => {
     const lower = text.toLowerCase();
 
-    // Open websites
     const openMatch = lower.match(/(?:abrir?|abra|acessar?|acesse|ir para|vai para|open)\s+(.+)/);
     if (openMatch) {
       const site = openMatch[1].trim();
+      // Don't intercept commercial module commands
+      const commercialKeywords = ["menu", "dashboard", "desempenho", "equipe", "funil", "previsão", "previsao", "metas", "relatório", "relatorio", "simulaç", "simulac", "alertas", "painel"];
+      if (commercialKeywords.some(k => site.includes(k))) return false;
+
       let url = site;
       if (!url.startsWith("http")) {
-        // Try to convert common names
         const siteMap: Record<string, string> = {
-          google: "https://www.google.com",
-          youtube: "https://www.youtube.com",
-          github: "https://www.github.com",
-          gmail: "https://mail.google.com",
-          twitter: "https://www.twitter.com",
-          x: "https://www.x.com",
-          instagram: "https://www.instagram.com",
-          facebook: "https://www.facebook.com",
-          linkedin: "https://www.linkedin.com",
-          whatsapp: "https://web.whatsapp.com",
-          spotify: "https://open.spotify.com",
-          netflix: "https://www.netflix.com",
+          google: "https://www.google.com", youtube: "https://www.youtube.com",
+          github: "https://www.github.com", gmail: "https://mail.google.com",
+          twitter: "https://www.twitter.com", x: "https://www.x.com",
+          instagram: "https://www.instagram.com", facebook: "https://www.facebook.com",
+          linkedin: "https://www.linkedin.com", whatsapp: "https://web.whatsapp.com",
+          spotify: "https://open.spotify.com", netflix: "https://www.netflix.com",
         };
         const key = Object.keys(siteMap).find(k => site.includes(k));
-        if (key) {
-          url = siteMap[key];
-        } else {
-          url = `https://www.${site.replace(/\s+/g, "")}.com`;
-        }
+        url = key ? siteMap[key] : `https://www.${site.replace(/\s+/g, "")}.com`;
       }
       window.open(url, "_blank");
-      speak(`Abrindo ${site}, senhor.`, () => {
-        setState("listening");
-        setSubtitle("Sempre ouvindo...");
-      });
+      speak(`Abrindo ${site}, senhor.`, () => { setState("listening"); setSubtitle("Sempre ouvindo..."); });
       setState("speaking");
       return true;
     }
 
-    // Search
     const searchMatch = lower.match(/(?:pesquisar?|pesquise|buscar?|busque|procurar?|procure|search)\s+(.+)/);
     if (searchMatch) {
       const query = searchMatch[1].trim();
       window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, "_blank");
-      speak(`Pesquisando por ${query}, senhor.`, () => {
-        setState("listening");
-        setSubtitle("Sempre ouvindo...");
-      });
+      speak(`Pesquisando por ${query}, senhor.`, () => { setState("listening"); setSubtitle("Sempre ouvindo..."); });
       setState("speaking");
       return true;
     }
@@ -194,21 +199,60 @@ const JarvisVoice = () => {
     return false;
   };
 
+  // Execute commercial command actions
+  const executeCommandAction = (action: ReturnType<typeof interpretCommand>) => {
+    if (!action) return false;
+
+    const { action: cmd, response } = action;
+
+    switch (cmd.type) {
+      case "navigate":
+        if (cmd.module === "home") {
+          setActiveModule(null);
+        } else {
+          setActiveModule(cmd.module as ModuleId);
+        }
+        setState("speaking");
+        setSubtitle(response);
+        speak(response, () => { setState("listening"); setSubtitle("Sempre ouvindo..."); });
+        return true;
+
+      case "menu":
+        if (cmd.action === "open") setMenuOpen(true);
+        else if (cmd.action === "close") setMenuOpen(false);
+        else setMenuOpen(prev => !prev);
+        setState("speaking");
+        speak(response, () => { setState("listening"); setSubtitle("Sempre ouvindo..."); });
+        return true;
+
+      case "report":
+        setActiveModule("relatorios");
+        setState("speaking");
+        speak(response, () => { setState("listening"); setSubtitle("Sempre ouvindo..."); });
+        return true;
+
+      case "export":
+        setState("speaking");
+        speak(response, () => { setState("listening"); setSubtitle("Sempre ouvindo..."); });
+        return true;
+
+      default:
+        return false;
+    }
+  };
+
   const handleVoiceResult = useCallback((transcript: string) => {
     const lower = transcript.toLowerCase().trim();
 
-    // Wake word detection when not activated
     if (!activated || wakeMode) {
       if (lower.includes(WAKE_WORD)) {
         doActivate();
-        // If there's more text after the wake word, process it
         const afterWake = lower.split(WAKE_WORD).pop()?.trim();
         if (afterWake && afterWake.length > 3) {
           setTimeout(() => processCommand(afterWake, transcript), 1500);
         }
         return;
       }
-      // Not activated and no wake word - ignore
       if (!activated) return;
     }
 
@@ -216,29 +260,32 @@ const JarvisVoice = () => {
   }, [activated, wakeMode]);
 
   const processCommand = (lower: string, transcript: string) => {
-    // Chat toggle
-    if (lower.includes("abrir chat") || lower.includes("mostrar chat") || lower.includes("open chat")) {
+    // 1. Try commercial command interpreter first
+    const commandResult = interpretCommand(lower);
+    if (commandResult && executeCommandAction(commandResult)) return;
+
+    // 2. Chat toggle
+    if (lower.includes("abrir chat") || lower.includes("mostrar chat")) {
       setChatVisible(true);
       speak("Chat ativado, senhor.", () => setState("listening"));
       setState("speaking");
       return;
     }
-    if (lower.includes("fechar chat") || lower.includes("esconder chat") || lower.includes("close chat")) {
+    if (lower.includes("fechar chat") || lower.includes("esconder chat")) {
       setChatVisible(false);
       speak("Chat desativado.", () => setState("listening"));
       setState("speaking");
       return;
     }
 
-    // Navigation commands (handled client-side)
+    // 3. Navigation commands (external websites)
     if (handleNavigationCommand(transcript)) return;
 
-    // All other commands go to AI
+    // 4. Send to AI
     setSubtitle(`"${transcript}"`);
     setState("thinking");
 
-    const currentMessages = messagesRef.current;
-    const newMessages: Message[] = [...currentMessages, { role: "user", content: transcript }];
+    const newMessages: Message[] = [...messagesRef.current, { role: "user", content: transcript }];
     setMessages(newMessages);
     saveMessage("user", transcript);
 
@@ -248,27 +295,18 @@ const JarvisVoice = () => {
     streamChat({
       messages: newMessages,
       sessionId: sessionId.current,
-      onDelta: (chunk) => {
-        fullResponse += chunk;
-        setCurrentResponse(fullResponse);
-      },
+      onDelta: (chunk) => { fullResponse += chunk; setCurrentResponse(fullResponse); },
       onDone: () => {
         setMessages(prev => [...prev, { role: "assistant", content: fullResponse }]);
         setCurrentResponse("");
         saveMessage("assistant", fullResponse);
         setState("speaking");
-        speak(fullResponse, () => {
-          setState("listening");
-          setSubtitle("Sempre ouvindo...");
-        });
+        speak(fullResponse, () => { setState("listening"); setSubtitle("Sempre ouvindo..."); });
       },
       onError: (err) => {
         setState("listening");
         setSubtitle(err);
-        speak("Desculpe senhor, encontrei um erro.", () => {
-          setState("listening");
-          setSubtitle("Sempre ouvindo...");
-        });
+        speak("Desculpe senhor, encontrei um erro.", () => { setState("listening"); setSubtitle("Sempre ouvindo..."); });
       },
     });
   };
@@ -279,35 +317,104 @@ const JarvisVoice = () => {
     useCallback((t: string) => onResultRef.current(t), [])
   );
 
+  const ActiveComponent = activeModule ? moduleComponents[activeModule] : null;
+
   return (
     <div className="fixed inset-0 bg-background flex flex-col items-center justify-center overflow-hidden select-none">
       <VerticalStreaks />
       <FloatingParticles isActive={state === "listening" || state === "speaking"} />
 
-      {/* Main orb */}
-      <div className="relative z-10 cursor-pointer" onClick={handleActivate}>
-        <AuroraOrb
-          isListening={state === "listening"}
-          isSpeaking={state === "speaking" || state === "thinking"}
-        />
-      </div>
+      {/* Side Menu */}
+      <SideMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        activeModule={activeModule}
+        onNavigate={(mod) => setActiveModule(mod)}
+      />
 
-      {/* Audio Visualizer */}
-      <motion.div
-        className="mt-2 sm:mt-4 z-10"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: activated ? 1 : 0 }}
-        transition={{ delay: 0.5 }}
-      >
-        <AudioVisualizer
-          isActive={state === "listening" || state === "speaking"}
-          mode={state === "listening" ? "listening" : state === "speaking" ? "speaking" : "idle"}
-        />
-      </motion.div>
+      {/* Menu button (top-left) */}
+      {activated && (
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setMenuOpen(true)}
+          className="absolute top-4 left-4 z-30 p-2 rounded-full border border-primary/20 text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors bg-card/50 backdrop-blur-sm"
+        >
+          <Menu className="w-4 h-4" />
+        </motion.button>
+      )}
+
+      {/* Back button when module is active */}
+      {activeModule && (
+        <motion.button
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setActiveModule(null)}
+          className="absolute top-4 left-14 z-30 p-2 rounded-full border border-primary/20 text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors bg-card/50 backdrop-blur-sm flex items-center gap-1.5"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span className="text-[10px] tracking-wider uppercase pr-1">Voltar</span>
+        </motion.button>
+      )}
+
+      {/* Commercial module view OR Jarvis orb */}
+      <AnimatePresence mode="wait">
+        {activeModule && ActiveComponent ? (
+          <motion.div
+            key={activeModule}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="absolute inset-0 z-20 pt-14 pb-20"
+          >
+            <Suspense fallback={
+              <div className="flex items-center justify-center h-full">
+                <div className="text-xs text-primary animate-pulse tracking-wider">CARREGANDO MÓDULO...</div>
+              </div>
+            }>
+              <ActiveComponent />
+            </Suspense>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="orb"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="relative z-10 cursor-pointer"
+            onClick={handleActivate}
+          >
+            <AuroraOrb
+              isListening={state === "listening"}
+              isSpeaking={state === "speaking" || state === "thinking"}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Audio Visualizer — only when on home */}
+      {!activeModule && (
+        <motion.div
+          className="mt-2 sm:mt-4 z-10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: activated ? 1 : 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <AudioVisualizer
+            isActive={state === "listening" || state === "speaking"}
+            mode={state === "listening" ? "listening" : state === "speaking" ? "speaking" : "idle"}
+          />
+        </motion.div>
+      )}
 
       {/* Status text */}
       <motion.div
-        className="mt-3 text-center z-10 px-4"
+        className={`text-center z-30 px-4 ${activeModule ? "absolute bottom-24 sm:bottom-28" : "mt-3"}`}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
@@ -325,7 +432,7 @@ const JarvisVoice = () => {
       </motion.div>
 
       {/* Bottom controls */}
-      <div className="absolute bottom-6 sm:bottom-8 flex items-center gap-4 z-10">
+      <div className={`flex items-center gap-4 z-30 ${activeModule ? "absolute bottom-6 sm:bottom-8" : "absolute bottom-6 sm:bottom-8"}`}>
         <motion.div animate={{ opacity: state === "listening" ? 1 : 0.3 }}>
           <div className={`p-2.5 sm:p-3 rounded-full border transition-colors ${
             state === "listening" ? "border-primary/50 bg-primary/10" : "border-border/30 bg-transparent"
@@ -354,7 +461,7 @@ const JarvisVoice = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 40, scale: 0.95 }}
             transition={{ type: "spring", damping: 25 }}
-            className="absolute bottom-20 sm:bottom-24 left-3 right-3 sm:left-4 sm:right-4 max-w-lg mx-auto max-h-[45vh] overflow-y-auto rounded-xl border border-border/40 bg-card/90 backdrop-blur-xl p-3 sm:p-4 z-20"
+            className="absolute bottom-20 sm:bottom-24 left-3 right-3 sm:left-4 sm:right-4 max-w-lg mx-auto max-h-[45vh] overflow-y-auto rounded-xl border border-border/40 bg-card/90 backdrop-blur-xl p-3 sm:p-4 z-30"
           >
             <div className="flex items-center justify-between mb-3">
               <p className="text-[10px] sm:text-xs text-muted-foreground tracking-wider uppercase">
