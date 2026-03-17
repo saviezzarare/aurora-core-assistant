@@ -24,6 +24,7 @@ const MetasComerciais = lazy(() => import("./commercial/MetasComerciais"));
 const Relatorios = lazy(() => import("./commercial/Relatorios"));
 const SimulacoesEstrategicas = lazy(() => import("./commercial/SimulacoesEstrategicas"));
 const AlertasEstrategicos = lazy(() => import("./commercial/AlertasEstrategicos"));
+const ImportarDados = lazy(() => import("./commercial/ImportarDados"));
 
 const moduleComponents: Record<ModuleId, React.LazyExoticComponent<any>> = {
   dashboard: DashboardComercial,
@@ -34,6 +35,7 @@ const moduleComponents: Record<ModuleId, React.LazyExoticComponent<any>> = {
   relatorios: Relatorios,
   simulacoes: SimulacoesEstrategicas,
   alertas: AlertasEstrategicos,
+  importar: ImportarDados,
 };
 
 type Message = { role: "user" | "assistant"; content: string };
@@ -231,10 +233,17 @@ const JarvisVoice = () => {
         speak(response, () => { setState("listening"); setSubtitle("Sempre ouvindo..."); });
         return true;
 
-      case "export":
+      case "export": {
+        // Dynamic import to avoid loading xlsx eagerly
+        import("@/lib/excelUtils").then(({ exportarRankingVendedores, exportarFunilComercial, exportarRelatorioCompleto }) => {
+          if (cmd.module === "ranking") exportarRankingVendedores();
+          else if (cmd.module === "funil") exportarFunilComercial();
+          else exportarRelatorioCompleto();
+        });
         setState("speaking");
         speak(response, () => { setState("listening"); setSubtitle("Sempre ouvindo..."); });
         return true;
+      }
 
       default:
         return false;
