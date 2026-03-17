@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, BarChart3, Users, Filter, TrendingUp, Target, FileText, FlaskConical, Bell, Home } from "lucide-react";
+import { X, BarChart3, Users, Filter, TrendingUp, Target, FileText, FlaskConical, Bell, Home, Upload } from "lucide-react";
 import type { ModuleId } from "@/lib/commandInterpreter";
 
 const icons: Record<string, any> = {
@@ -11,6 +11,7 @@ const icons: Record<string, any> = {
   relatorios: FileText,
   simulacoes: FlaskConical,
   alertas: Bell,
+  importar: Upload,
 };
 
 const modules = [
@@ -22,6 +23,7 @@ const modules = [
   { id: "relatorios" as ModuleId, label: "Relatórios" },
   { id: "simulacoes" as ModuleId, label: "Simulações" },
   { id: "alertas" as ModuleId, label: "Alertas" },
+  { id: "importar" as ModuleId, label: "Importar Excel" },
 ];
 
 interface SideMenuProps {
@@ -116,7 +118,7 @@ const SideMenu = ({ open, onClose, activeModule, onNavigate }: SideMenuProps) =>
 
           {/* Footer */}
           <div className="p-4 border-t border-primary/10">
-            <p className="text-[9px] text-muted-foreground/40 text-center">JARVIS COMERCIAL v1.0</p>
+            <p className="text-[9px] text-muted-foreground/40 text-center">JARVIS COMERCIAL v2.0</p>
             <p className="text-[9px] text-muted-foreground/30 text-center">Unimed Bauru</p>
           </div>
         </motion.div>

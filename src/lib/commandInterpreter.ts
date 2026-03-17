@@ -130,11 +130,50 @@ const commands: CommandPattern[] = [
     response: "Exibindo os alertas estratégicos, senhor.",
   },
 
+  // Insights
+  {
+    patterns: [
+      /insights?\s*(comerciais|estrat[eé]gicos|autom[aá]ticos)?/,
+      /recomenda[çc][oõ]es/,
+      /an[aá]lise\s+inteligente/,
+      /mostrar?\s+insights/,
+    ],
+    action: { type: "navigate", module: "alertas", label: "Insights Estratégicos" },
+    response: "Exibindo os insights e recomendações estratégicas, senhor.",
+  },
+
+  // Importar dados / Excel
+  {
+    patterns: [
+      /importar?\s*(dados|planilha|excel|arquivo)/,
+      /carregar?\s*(planilha|excel|dados)/,
+      /abrir?\s+importa/,
+      /upload\s*(de\s+)?(planilha|excel|dados)/,
+    ],
+    action: { type: "navigate", module: "importar", label: "Importar Dados" },
+    response: "Abrindo o módulo de importação de dados, senhor.",
+  },
+
   // Export
   {
     patterns: [/exportar?\s+.*(excel|csv|planilha)/],
     action: { type: "export", format: "excel", module: "current" },
     response: "Preparando a exportação dos dados, senhor.",
+  },
+  {
+    patterns: [/exportar?\s+ranking/],
+    action: { type: "export", format: "excel", module: "ranking" },
+    response: "Exportando o ranking dos vendedores para Excel, senhor.",
+  },
+  {
+    patterns: [/exportar?\s+funil/],
+    action: { type: "export", format: "excel", module: "funil" },
+    response: "Exportando o funil comercial para Excel, senhor.",
+  },
+  {
+    patterns: [/exportar?\s+(relat[oó]rio\s+)?completo/],
+    action: { type: "export", format: "excel", module: "completo" },
+    response: "Exportando o relatório completo para Excel, senhor.",
   },
 
   // Report generation
@@ -182,6 +221,7 @@ export const MODULE_LIST = [
   { id: "relatorios", label: "Relatórios", icon: "FileText" },
   { id: "simulacoes", label: "Simulações Estratégicas", icon: "FlaskConical" },
   { id: "alertas", label: "Alertas Estratégicos", icon: "Bell" },
+  { id: "importar", label: "Importar Dados", icon: "Upload" },
 ] as const;
 
 export type ModuleId = (typeof MODULE_LIST)[number]["id"];
