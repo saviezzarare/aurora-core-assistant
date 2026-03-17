@@ -24,6 +24,7 @@ const MetasComerciais = lazy(() => import("./commercial/MetasComerciais"));
 const Relatorios = lazy(() => import("./commercial/Relatorios"));
 const SimulacoesEstrategicas = lazy(() => import("./commercial/SimulacoesEstrategicas"));
 const AlertasEstrategicos = lazy(() => import("./commercial/AlertasEstrategicos"));
+const ImportarDados = lazy(() => import("./commercial/ImportarDados"));
 
 const moduleComponents: Record<ModuleId, React.LazyExoticComponent<any>> = {
   dashboard: DashboardComercial,
@@ -34,6 +35,7 @@ const moduleComponents: Record<ModuleId, React.LazyExoticComponent<any>> = {
   relatorios: Relatorios,
   simulacoes: SimulacoesEstrategicas,
   alertas: AlertasEstrategicos,
+  importar: ImportarDados,
 };
 
 type Message = { role: "user" | "assistant"; content: string };
