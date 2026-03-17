@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { FileText, Download, Calendar, Clock } from "lucide-react";
+import { FileText, Download, Calendar, Clock, FileSpreadsheet } from "lucide-react";
+import { exportarRelatorioCompleto, exportarRankingVendedores, exportarFunilComercial, exportarVendasMensais } from "@/lib/excelUtils";
 
 const relatorios = [
   { titulo: "Relatório Semanal", periodo: "10-16 Mar 2026", gerado: "16/03/2026 08:00", tipo: "semanal" },
@@ -7,6 +8,13 @@ const relatorios = [
   { titulo: "Relatório Mensal — Janeiro", periodo: "01-31 Jan 2026", gerado: "01/02/2026 09:00", tipo: "mensal" },
   { titulo: "Relatório Trimestral Q4 2025", periodo: "Out-Dez 2025", gerado: "02/01/2026 09:00", tipo: "trimestral" },
   { titulo: "Análise de Conversão", periodo: "Último trimestre", gerado: "15/03/2026 14:00", tipo: "especial" },
+];
+
+const exportacoes = [
+  { label: "Relatório Completo", desc: "Equipe + Funil + Vendas", action: exportarRelatorioCompleto, icon: FileSpreadsheet },
+  { label: "Ranking Vendedores", desc: "Performance individual", action: exportarRankingVendedores, icon: FileSpreadsheet },
+  { label: "Funil Comercial", desc: "Etapas e conversão", action: exportarFunilComercial, icon: FileSpreadsheet },
+  { label: "Vendas Mensais", desc: "Evolução mensal", action: exportarVendasMensais, icon: FileSpreadsheet },
 ];
 
 const Relatorios = () => (
@@ -18,8 +26,8 @@ const Relatorios = () => (
   >
     <h2 className="text-lg font-semibold text-primary tracking-wider mb-4">RELATÓRIOS</h2>
 
-    {/* Quick actions */}
-    <div className="grid grid-cols-2 gap-3 mb-6">
+    {/* Quick generate */}
+    <div className="grid grid-cols-2 gap-3 mb-4">
       <motion.button
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
@@ -40,14 +48,40 @@ const Relatorios = () => (
       </motion.button>
     </div>
 
-    {/* List */}
+    {/* Excel exports */}
+    <div className="mb-4">
+      <p className="text-xs text-primary/70 uppercase tracking-wider mb-3">📊 Exportar para Excel</p>
+      <div className="grid grid-cols-2 gap-2">
+        {exportacoes.map((exp, i) => (
+          <motion.button
+            key={exp.label}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.08 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={exp.action}
+            className="border border-emerald-400/20 rounded-lg p-3 bg-emerald-400/5 text-left hover:bg-emerald-400/10 transition-colors flex items-start gap-2"
+          >
+            <exp.icon className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-[11px] font-medium text-foreground">{exp.label}</p>
+              <p className="text-[10px] text-muted-foreground">{exp.desc}</p>
+            </div>
+          </motion.button>
+        ))}
+      </div>
+    </div>
+
+    {/* Reports list */}
+    <p className="text-xs text-primary/70 uppercase tracking-wider mb-3">Relatórios Anteriores</p>
     <div className="space-y-2">
       {relatorios.map((r, i) => (
         <motion.div
           key={r.titulo}
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: i * 0.08 }}
+          transition={{ delay: 0.2 + i * 0.08 }}
           className="border border-primary/20 rounded-lg p-3 bg-primary/5 flex items-center justify-between hover:bg-primary/10 transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-3">
