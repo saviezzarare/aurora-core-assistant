@@ -233,10 +233,17 @@ const JarvisVoice = () => {
         speak(response, () => { setState("listening"); setSubtitle("Sempre ouvindo..."); });
         return true;
 
-      case "export":
+      case "export": {
+        // Dynamic import to avoid loading xlsx eagerly
+        import("@/lib/excelUtils").then(({ exportarRankingVendedores, exportarFunilComercial, exportarRelatorioCompleto }) => {
+          if (cmd.module === "ranking") exportarRankingVendedores();
+          else if (cmd.module === "funil") exportarFunilComercial();
+          else exportarRelatorioCompleto();
+        });
         setState("speaking");
         speak(response, () => { setState("listening"); setSubtitle("Sempre ouvindo..."); });
         return true;
+      }
 
       default:
         return false;
