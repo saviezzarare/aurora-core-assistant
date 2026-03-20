@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MessageSquare, X, Menu, ArrowLeft } from "lucide-react";
+import { Mic, MessageSquare, X, Menu, ArrowLeft, Send } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import AuroraOrb from "./AuroraOrb";
 import FloatingParticles from "./FloatingParticles";
