@@ -470,9 +470,9 @@ const JarvisVoice = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 40, scale: 0.95 }}
             transition={{ type: "spring", damping: 25 }}
-            className="absolute bottom-20 sm:bottom-24 left-3 right-3 sm:left-4 sm:right-4 max-w-lg mx-auto max-h-[45vh] overflow-y-auto rounded-xl border border-border/40 bg-card/90 backdrop-blur-xl p-3 sm:p-4 z-30"
+            className="absolute bottom-20 sm:bottom-24 left-3 right-3 sm:left-4 sm:right-4 max-w-lg mx-auto max-h-[50vh] flex flex-col rounded-xl border border-border/40 bg-card/90 backdrop-blur-xl z-30"
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between p-3 pb-0 sm:p-4 sm:pb-0">
               <p className="text-[10px] sm:text-xs text-muted-foreground tracking-wider uppercase">
                 Registro de Conversas
               </p>
@@ -481,36 +481,68 @@ const JarvisVoice = () => {
               </span>
             </div>
 
-            {messages.length === 0 && (
-              <p className="text-xs sm:text-sm text-muted-foreground/50 text-center py-4">
-                Nenhuma conversa ainda. Fale com o J.A.R.V.I.S.!
-              </p>
-            )}
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4 pt-2">
+              {messages.length === 0 && (
+                <p className="text-xs sm:text-sm text-muted-foreground/50 text-center py-4">
+                  Nenhuma conversa ainda. Fale com o J.A.R.V.I.S.!
+                </p>
+              )}
 
-            {messages.map((msg, i) => (
-              <div key={i} className={`mb-3 ${msg.role === "user" ? "text-right" : "text-left"}`}>
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {msg.role === "user" ? "Você" : "J.A.R.V.I.S."}
-                </span>
-                <div className={`text-xs sm:text-sm mt-0.5 ${msg.role === "user" ? "text-foreground/70" : "text-foreground"}`}>
-                  {msg.role === "assistant" ? (
-                    <div className="prose prose-sm prose-invert max-w-none [&_p]:m-0 [&_strong]:text-primary [&_table]:text-xs [&_th]:text-primary [&_td]:border-border/30">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
-                    </div>
-                  ) : msg.content}
+              {messages.map((msg, i) => (
+                <div key={i} className={`mb-3 ${msg.role === "user" ? "text-right" : "text-left"}`}>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {msg.role === "user" ? "Diego" : "J.A.R.V.I.S."}
+                  </span>
+                  <div className={`text-xs sm:text-sm mt-0.5 ${msg.role === "user" ? "text-foreground/70" : "text-foreground"}`}>
+                    {msg.role === "assistant" ? (
+                      <div className="prose prose-sm prose-invert max-w-none [&_p]:m-0 [&_strong]:text-primary [&_table]:text-xs [&_th]:text-primary [&_td]:border-border/30">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
+                    ) : msg.content}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
 
-            {currentResponse && (
-              <div className="mb-3 text-left">
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">J.A.R.V.I.S.</span>
-                <div className="text-xs sm:text-sm mt-0.5 text-foreground prose prose-sm prose-invert max-w-none [&_p]:m-0 [&_strong]:text-primary">
-                  <ReactMarkdown>{currentResponse}</ReactMarkdown>
+              {currentResponse && (
+                <div className="mb-3 text-left">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">J.A.R.V.I.S.</span>
+                  <div className="text-xs sm:text-sm mt-0.5 text-foreground prose prose-sm prose-invert max-w-none [&_p]:m-0 [&_strong]:text-primary">
+                    <ReactMarkdown>{currentResponse}</ReactMarkdown>
+                  </div>
                 </div>
-              </div>
-            )}
-            <div ref={chatEndRef} />
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            {/* Text input */}
+            <div className="border-t border-border/30 p-2 sm:p-3">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const input = (e.target as HTMLFormElement).elements.namedItem("chatInput") as HTMLInputElement;
+                  const text = input.value.trim();
+                  if (!text || state === "thinking") return;
+                  input.value = "";
+                  processCommand(text.toLowerCase(), text);
+                }}
+                className="flex items-center gap-2"
+              >
+                <input
+                  name="chatInput"
+                  type="text"
+                  placeholder="Digite um comando ou pergunta..."
+                  disabled={state === "thinking"}
+                  className="flex-1 bg-background/50 border border-border/40 rounded-lg px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/40 disabled:opacity-50"
+                />
+                <button
+                  type="submit"
+                  disabled={state === "thinking"}
+                  className="p-1.5 rounded-lg border border-primary/20 text-primary/70 hover:bg-primary/10 transition-colors disabled:opacity-30"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                </button>
+              </form>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
