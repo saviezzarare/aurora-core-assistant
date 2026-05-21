@@ -429,7 +429,7 @@ const JarvisVoice = () => {
         transition={{ delay: 0.5 }}
       >
         <p className="text-[10px] sm:text-xs tracking-[0.3em] uppercase text-muted-foreground mb-1">
-          {!activated && "DIGA 'JARVIS' OU TOQUE"}
+          {!activated && "DIGA 'LUXIUM' OU TOQUE"}
           {activated && state === "idle" && "STANDBY"}
           {state === "listening" && "ESCUTANDO"}
           {state === "thinking" && "PROCESSANDO"}
