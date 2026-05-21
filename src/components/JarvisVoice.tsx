@@ -484,14 +484,14 @@ const JarvisVoice = () => {
             <div className="flex-1 overflow-y-auto p-3 sm:p-4 pt-2">
               {messages.length === 0 && (
                 <p className="text-xs sm:text-sm text-muted-foreground/50 text-center py-4">
-                  Nenhuma conversa ainda. Fale com o J.A.R.V.I.S.!
+                  Nenhuma conversa ainda. Fale com Luxium.
                 </p>
               )}
 
               {messages.map((msg, i) => (
                 <div key={i} className={`mb-3 ${msg.role === "user" ? "text-right" : "text-left"}`}>
                   <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    {msg.role === "user" ? "Diego" : "J.A.R.V.I.S."}
+                    {msg.role === "user" ? "Diego" : "Luxium"}
                   </span>
                   <div className={`text-xs sm:text-sm mt-0.5 ${msg.role === "user" ? "text-foreground/70" : "text-foreground"}`}>
                     {msg.role === "assistant" ? (
