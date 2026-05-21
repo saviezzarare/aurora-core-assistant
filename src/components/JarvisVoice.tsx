@@ -223,9 +223,6 @@ const JarvisVoice = () => {
 
       default:
         return false;
-
-      default:
-        return false;
     }
   };
 
