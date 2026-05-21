@@ -118,7 +118,7 @@ const SideMenu = ({ open, onClose, activeModule, onNavigate }: SideMenuProps) =>
 
           {/* Footer */}
           <div className="p-4 border-t border-primary/10">
-            <p className="text-[9px] text-muted-foreground/40 text-center">JARVIS COMERCIAL v2.0</p>
+            <p className="text-[9px] text-muted-foreground/40 text-center">LUXIUM ASSISTANT v3.0</p>
             <p className="text-[9px] text-muted-foreground/30 text-center">Unimed Bauru</p>
           </div>
         </motion.div>
