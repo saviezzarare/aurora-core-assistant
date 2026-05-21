@@ -40,13 +40,13 @@ const moduleComponents: Record<ModuleId, React.LazyExoticComponent<any>> = {
 
 type Message = { role: "user" | "assistant"; content: string };
 
-const WAKE_WORD = "jarvis";
+const WAKE_WORD = "luxium";
 
 const JarvisVoice = () => {
   useAdaptiveTheme();
 
   const [state, setState] = useState<"idle" | "listening" | "thinking" | "speaking">("idle");
-  const [subtitle, setSubtitle] = useState("Toque na aurora ou diga 'Jarvis'");
+  const [subtitle, setSubtitle] = useState("Toque na orb ou diga 'Luxium'");
   const [activated, setActivated] = useState(false);
   const [chatVisible, setChatVisible] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -154,7 +154,7 @@ const JarvisVoice = () => {
     setWakeMode(false);
     setState("speaking");
     setSubtitle("Inicializando...");
-    speak("J.A.R.V.I.S. ao seu dispor, senhor.", () => {
+    speak("Luxium ao seu dispor, senhor.", () => {
       setState("listening");
       setSubtitle("Sempre ouvindo...");
     });
@@ -341,20 +341,20 @@ const JarvisVoice = () => {
         onNavigate={(mod) => setActiveModule(mod)}
       />
 
-      {/* Menu button (top-left) */}
-      {activated && (
+      {/* Menu button (top-left) — discreto, aparece somente quando ativado ou em módulo */}
+      {(activated && (activeModule || menuOpen || chatVisible)) || activeModule ? (
         <motion.button
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+          animate={{ opacity: 0.6 }}
+          whileHover={{ opacity: 1, scale: 1.08 }}
+          whileTap={{ scale: 0.92 }}
           onClick={() => setMenuOpen(true)}
-          className="absolute top-4 left-4 z-30 p-2 rounded-full border border-primary/20 text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors bg-card/50 backdrop-blur-sm"
+          className="absolute top-4 left-4 z-30 p-2 rounded-full border border-border/30 text-muted-foreground hover:text-foreground hover:border-border/60 transition-colors bg-card/30 backdrop-blur-md"
+          aria-label="Abrir menu"
         >
-          <Menu className="w-4 h-4" />
+          <Menu className="w-3.5 h-3.5" />
         </motion.button>
-      )}
+      ) : null}
 
       {/* Back button when module is active */}
       {activeModule && (
@@ -429,7 +429,7 @@ const JarvisVoice = () => {
         transition={{ delay: 0.5 }}
       >
         <p className="text-[10px] sm:text-xs tracking-[0.3em] uppercase text-muted-foreground mb-1">
-          {!activated && "DIGA 'JARVIS' OU TOQUE"}
+          {!activated && "DIGA 'LUXIUM' OU TOQUE"}
           {activated && state === "idle" && "STANDBY"}
           {state === "listening" && "ESCUTANDO"}
           {state === "thinking" && "PROCESSANDO"}
@@ -484,14 +484,14 @@ const JarvisVoice = () => {
             <div className="flex-1 overflow-y-auto p-3 sm:p-4 pt-2">
               {messages.length === 0 && (
                 <p className="text-xs sm:text-sm text-muted-foreground/50 text-center py-4">
-                  Nenhuma conversa ainda. Fale com o J.A.R.V.I.S.!
+                  Nenhuma conversa ainda. Fale com Luxium.
                 </p>
               )}
 
               {messages.map((msg, i) => (
                 <div key={i} className={`mb-3 ${msg.role === "user" ? "text-right" : "text-left"}`}>
                   <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    {msg.role === "user" ? "Diego" : "J.A.R.V.I.S."}
+                    {msg.role === "user" ? "Diego" : "Luxium"}
                   </span>
                   <div className={`text-xs sm:text-sm mt-0.5 ${msg.role === "user" ? "text-foreground/70" : "text-foreground"}`}>
                     {msg.role === "assistant" ? (
@@ -505,7 +505,7 @@ const JarvisVoice = () => {
 
               {currentResponse && (
                 <div className="mb-3 text-left">
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">J.A.R.V.I.S.</span>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Luxium</span>
                   <div className="text-xs sm:text-sm mt-0.5 text-foreground prose prose-sm prose-invert max-w-none [&_p]:m-0 [&_strong]:text-primary">
                     <ReactMarkdown>{currentResponse}</ReactMarkdown>
                   </div>
