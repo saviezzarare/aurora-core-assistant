@@ -341,20 +341,20 @@ const JarvisVoice = () => {
         onNavigate={(mod) => setActiveModule(mod)}
       />
 
-      {/* Menu button (top-left) */}
-      {activated && (
+      {/* Menu button (top-left) — discreto, aparece somente quando ativado ou em módulo */}
+      {(activated && (activeModule || menuOpen || chatVisible)) || activeModule ? (
         <motion.button
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+          animate={{ opacity: 0.6 }}
+          whileHover={{ opacity: 1, scale: 1.08 }}
+          whileTap={{ scale: 0.92 }}
           onClick={() => setMenuOpen(true)}
-          className="absolute top-4 left-4 z-30 p-2 rounded-full border border-primary/20 text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors bg-card/50 backdrop-blur-sm"
+          className="absolute top-4 left-4 z-30 p-2 rounded-full border border-border/30 text-muted-foreground hover:text-foreground hover:border-border/60 transition-colors bg-card/30 backdrop-blur-md"
+          aria-label="Abrir menu"
         >
-          <Menu className="w-4 h-4" />
+          <Menu className="w-3.5 h-3.5" />
         </motion.button>
-      )}
+      ) : null}
 
       {/* Back button when module is active */}
       {activeModule && (
