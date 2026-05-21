@@ -56,7 +56,7 @@ const SideMenu = ({ open, onClose, activeModule, onNavigate }: SideMenuProps) =>
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-primary/10">
-            <span className="text-xs tracking-[0.3em] uppercase text-primary font-semibold">J.A.R.V.I.S.</span>
+            <span className="text-xs tracking-[0.3em] uppercase text-primary font-semibold">LUXIUM</span>
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
