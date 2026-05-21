@@ -40,13 +40,13 @@ const moduleComponents: Record<ModuleId, React.LazyExoticComponent<any>> = {
 
 type Message = { role: "user" | "assistant"; content: string };
 
-const WAKE_WORD = "jarvis";
+const WAKE_WORD = "luxium";
 
 const JarvisVoice = () => {
   useAdaptiveTheme();
 
   const [state, setState] = useState<"idle" | "listening" | "thinking" | "speaking">("idle");
-  const [subtitle, setSubtitle] = useState("Toque na aurora ou diga 'Jarvis'");
+  const [subtitle, setSubtitle] = useState("Toque na orb ou diga 'Luxium'");
   const [activated, setActivated] = useState(false);
   const [chatVisible, setChatVisible] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
