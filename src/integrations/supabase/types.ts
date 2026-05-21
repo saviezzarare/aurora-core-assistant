@@ -67,6 +67,102 @@ export type Database = {
         }
         Relationships: []
       }
+      prospected_companies: {
+        Row: {
+          cidade: string | null
+          cnpj: string | null
+          created_at: string
+          email: string | null
+          estado: string | null
+          fonte: string | null
+          id: string
+          lead_score: number | null
+          nome: string
+          observacoes: string | null
+          porte: string | null
+          qualificacao: string | null
+          raw: Json | null
+          search_id: string | null
+          segmento: string | null
+          site: string | null
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          cidade?: string | null
+          cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          estado?: string | null
+          fonte?: string | null
+          id?: string
+          lead_score?: number | null
+          nome: string
+          observacoes?: string | null
+          porte?: string | null
+          qualificacao?: string | null
+          raw?: Json | null
+          search_id?: string | null
+          segmento?: string | null
+          site?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cidade?: string | null
+          cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          estado?: string | null
+          fonte?: string | null
+          id?: string
+          lead_score?: number | null
+          nome?: string
+          observacoes?: string | null
+          porte?: string | null
+          qualificacao?: string | null
+          raw?: Json | null
+          search_id?: string | null
+          segmento?: string | null
+          site?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      prospection_searches: {
+        Row: {
+          cidade: string | null
+          created_at: string
+          estado: string | null
+          filtros: Json | null
+          id: string
+          segmento: string | null
+          status: string | null
+          total_encontrado: number | null
+        }
+        Insert: {
+          cidade?: string | null
+          created_at?: string
+          estado?: string | null
+          filtros?: Json | null
+          id?: string
+          segmento?: string | null
+          status?: string | null
+          total_encontrado?: number | null
+        }
+        Update: {
+          cidade?: string | null
+          created_at?: string
+          estado?: string | null
+          filtros?: Json | null
+          id?: string
+          segmento?: string | null
+          status?: string | null
+          total_encontrado?: number | null
+        }
+        Relationships: []
+      }
       reminders: {
         Row: {
           completed: boolean
