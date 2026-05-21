@@ -15,27 +15,21 @@ import { getSessionId } from "@/lib/sessionId";
 import { interpretCommand, type ModuleId } from "@/lib/commandInterpreter";
 import { supabase } from "@/integrations/supabase/client";
 
-// Lazy load commercial modules
-const DashboardComercial = lazy(() => import("./commercial/DashboardComercial"));
-const PerformanceEquipe = lazy(() => import("./commercial/PerformanceEquipe"));
-const FunilComercial = lazy(() => import("./commercial/FunilComercial"));
-const PrevisaoVendas = lazy(() => import("./commercial/PrevisaoVendas"));
-const MetasComerciais = lazy(() => import("./commercial/MetasComerciais"));
-const Relatorios = lazy(() => import("./commercial/Relatorios"));
-const SimulacoesEstrategicas = lazy(() => import("./commercial/SimulacoesEstrategicas"));
-const AlertasEstrategicos = lazy(() => import("./commercial/AlertasEstrategicos"));
-const ImportarDados = lazy(() => import("./commercial/ImportarDados"));
+// Lazy load prospection modules (Fase 2)
+const BuscaProspeccao = lazy(() => import("./commercial/BuscaProspeccao"));
+const EmpresasProspectadas = lazy(() => import("./commercial/EmpresasProspectadas"));
+const QualificacaoLeads = lazy(() => import("./commercial/QualificacaoLeads"));
+const MapaRegional = lazy(() => import("./commercial/MapaRegional"));
+const AnaliseSegmentos = lazy(() => import("./commercial/AnaliseSegmentos"));
+const HistoricoBuscas = lazy(() => import("./commercial/HistoricoBuscas"));
 
 const moduleComponents: Record<ModuleId, React.LazyExoticComponent<any>> = {
-  dashboard: DashboardComercial,
-  performance: PerformanceEquipe,
-  funil: FunilComercial,
-  previsao: PrevisaoVendas,
-  metas: MetasComerciais,
-  relatorios: Relatorios,
-  simulacoes: SimulacoesEstrategicas,
-  alertas: AlertasEstrategicos,
-  importar: ImportarDados,
+  prospeccao: BuscaProspeccao,
+  empresas: EmpresasProspectadas,
+  qualificacao: QualificacaoLeads,
+  mapa: MapaRegional,
+  segmentos: AnaliseSegmentos,
+  historico: HistoricoBuscas,
 };
 
 type Message = { role: "user" | "assistant"; content: string };
@@ -226,24 +220,6 @@ const JarvisVoice = () => {
         setState("speaking");
         speak(response, () => { setState("listening"); setSubtitle("Sempre ouvindo..."); });
         return true;
-
-      case "report":
-        setActiveModule("relatorios");
-        setState("speaking");
-        speak(response, () => { setState("listening"); setSubtitle("Sempre ouvindo..."); });
-        return true;
-
-      case "export": {
-        // Dynamic import to avoid loading xlsx eagerly
-        import("@/lib/excelUtils").then(({ exportarRankingVendedores, exportarFunilComercial, exportarRelatorioCompleto }) => {
-          if (cmd.module === "ranking") exportarRankingVendedores();
-          else if (cmd.module === "funil") exportarFunilComercial();
-          else exportarRelatorioCompleto();
-        });
-        setState("speaking");
-        speak(response, () => { setState("listening"); setSubtitle("Sempre ouvindo..."); });
-        return true;
-      }
 
       default:
         return false;
