@@ -154,7 +154,7 @@ const JarvisVoice = () => {
     setWakeMode(false);
     setState("speaking");
     setSubtitle("Inicializando...");
-    speak("J.A.R.V.I.S. ao seu dispor, senhor.", () => {
+    speak("Luxium ao seu dispor, senhor.", () => {
       setState("listening");
       setSubtitle("Sempre ouvindo...");
     });
