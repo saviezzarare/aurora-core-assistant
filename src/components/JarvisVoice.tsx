@@ -505,7 +505,7 @@ const JarvisVoice = () => {
 
               {currentResponse && (
                 <div className="mb-3 text-left">
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">J.A.R.V.I.S.</span>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Luxium</span>
                   <div className="text-xs sm:text-sm mt-0.5 text-foreground prose prose-sm prose-invert max-w-none [&_p]:m-0 [&_strong]:text-primary">
                     <ReactMarkdown>{currentResponse}</ReactMarkdown>
                   </div>
