@@ -94,7 +94,7 @@ export async function speak(
     speaking = true;
 
     const response = await fetch(
-      https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream,
+      `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream`,
       {
         method: "POST",
         headers: {
