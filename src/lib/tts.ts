@@ -1,17 +1,13 @@
+import { supabase } from "@/integrations/supabase/client";
+
 let currentAudio: HTMLAudioElement | null = null;
 let speaking = false;
+let elevenLabsAvailable = true; // desabilita após falhas repetidas na sessão
+let consecutiveFailures = 0;
 
-const API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY as string | undefined;
 const VOICE_ID =
   (import.meta.env.VITE_ELEVENLABS_VOICE_ID as string | undefined) ||
-  "TxGEqnHWrfWFTfGW9XjX";
-
-console.log(
-  "[TTS] ElevenLabs config:",
-  API_KEY ? `key=***${API_KEY.slice(-4)}` : "NO KEY",
-  "voice=",
-  VOICE_ID
-);
+  "qSeXEcewz7tA0Q0qk9fH";
 
 function sanitizeText(text: string) {
   return text
@@ -22,7 +18,9 @@ function sanitizeText(text: string) {
 }
 
 function browserSpeak(text: string, onEnd?: () => void) {
-  speechSynthesis.cancel();
+  try {
+    speechSynthesis.cancel();
+  } catch {}
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "pt-BR";
   utterance.rate = 1;
@@ -39,56 +37,50 @@ function browserSpeak(text: string, onEnd?: () => void) {
 
   if (preferredVoice) utterance.voice = preferredVoice;
 
-  utterance.onstart = () => { speaking = true; };
-  utterance.onend = () => { speaking = false; onEnd?.(); };
-  utterance.onerror = () => { speaking = false; onEnd?.(); };
+  utterance.onstart = () => {
+    speaking = true;
+  };
+  utterance.onend = () => {
+    speaking = false;
+    onEnd?.();
+  };
+  utterance.onerror = () => {
+    speaking = false;
+    onEnd?.();
+  };
 
   speechSynthesis.speak(utterance);
 }
 
 export async function speak(text: string, onEnd?: () => void) {
   const clean = sanitizeText(text);
-  if (!clean) { onEnd?.(); return; }
+  if (!clean) {
+    onEnd?.();
+    return;
+  }
 
   stopSpeaking();
 
-  if (!API_KEY) {
-    console.warn("[TTS] VITE_ELEVENLABS_API_KEY ausente. Usando voz local.");
+  if (!elevenLabsAvailable) {
     return browserSpeak(clean, onEnd);
   }
 
   try {
     speaking = true;
-    console.log("[TTS] Solicitando ElevenLabs…", { voice: VOICE_ID, len: clean.length });
+    const { data, error } = await supabase.functions.invoke("tts-elevenlabs", {
+      body: { text: clean, voiceId: VOICE_ID },
+    });
 
-    const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream?output_format=mp3_44100_128`,
-      {
-        method: "POST",
-        headers: {
-          Accept: "audio/mpeg",
-          "Content-Type": "application/json",
-          "xi-api-key": API_KEY,
-        },
-        body: JSON.stringify({
-          text: clean,
-          model_id: "eleven_multilingual_v2",
-          voice_settings: {
-            stability: 0.35,
-            similarity_boost: 0.9,
-            style: 0.65,
-            use_speaker_boost: true,
-          },
-        }),
-      }
-    );
+    if (error) throw new Error(error.message || "Falha ao chamar TTS");
 
-    if (!response.ok) {
-      const errText = await response.text().catch(() => "");
-      throw new Error(`ElevenLabs ${response.status}: ${errText}`);
-    }
+    // supabase.functions.invoke retorna Blob para audio/mpeg
+    const blob =
+      data instanceof Blob
+        ? data
+        : new Blob([data as ArrayBuffer], { type: "audio/mpeg" });
 
-    const blob = await response.blob();
+    if (!blob.size) throw new Error("Áudio vazio");
+
     const url = URL.createObjectURL(blob);
     currentAudio = new Audio(url);
     currentAudio.preload = "auto";
@@ -107,19 +99,29 @@ export async function speak(text: string, onEnd?: () => void) {
     };
 
     await currentAudio.play();
-    console.log("[TTS] Reproduzindo voz ElevenLabs ✓");
-  } catch (error) {
-    console.error("[TTS] Erro ElevenLabs, usando fallback do navegador:", error);
+    consecutiveFailures = 0;
+    console.log("[TTS] ElevenLabs ✓");
+  } catch (err) {
+    consecutiveFailures += 1;
+    console.error("[TTS] Falha ElevenLabs, usando fallback:", err);
+    if (consecutiveFailures >= 3) {
+      elevenLabsAvailable = false;
+      console.warn("[TTS] ElevenLabs desabilitado nesta sessão após 3 falhas.");
+    }
     speaking = false;
     browserSpeak(clean, onEnd);
   }
 }
 
 export function stopSpeaking() {
-  speechSynthesis.cancel();
+  try {
+    speechSynthesis.cancel();
+  } catch {}
   if (currentAudio) {
-    currentAudio.pause();
-    currentAudio.currentTime = 0;
+    try {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    } catch {}
     currentAudio = null;
   }
   speaking = false;
@@ -127,4 +129,9 @@ export function stopSpeaking() {
 
 export function isSpeaking() {
   return speaking;
+}
+
+export function resetTTS() {
+  elevenLabsAvailable = true;
+  consecutiveFailures = 0;
 }
