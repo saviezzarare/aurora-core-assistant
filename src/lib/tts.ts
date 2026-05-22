@@ -119,7 +119,7 @@ export async function speak(
 
     if (!response.ok) {
       throw new Error(
-        ElevenLabs ${response.status}
+        `ElevenLabs ${response.status}`
       );
     }
 
