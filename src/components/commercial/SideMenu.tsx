@@ -14,7 +14,6 @@ const icons: Record<string, any> = {
 const modules: { id: ModuleId; label: string }[] = [
   { id: "prospeccao", label: "Buscar Empresas" },
   { id: "empresas", label: "Empresas Prospectadas" },
-  { id: "qualificacao", label: "Qualificação de Leads" },
   { id: "mapa", label: "Mapa Regional" },
   { id: "segmentos", label: "Análise de Segmentos" },
   { id: "historico", label: "Histórico de Buscas" },
