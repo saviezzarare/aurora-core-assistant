@@ -57,12 +57,15 @@ const JarvisVoice = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+  useEffect(() => {
+    if (!user) return;
     loadConversationHistory();
     const interval = setInterval(checkReminders, 30000);
     setWakeMode(true);
     startListening();
     return () => clearInterval(interval);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
