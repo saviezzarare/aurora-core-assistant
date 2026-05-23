@@ -352,6 +352,20 @@ const JarvisVoice = () => {
         </motion.button>
       )}
 
+      {/* Sign out (top-right) */}
+      <motion.button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.5 }}
+        whileHover={{ opacity: 1, scale: 1.08 }}
+        whileTap={{ scale: 0.92 }}
+        onClick={() => signOut()}
+        title={user?.email ?? "Sair"}
+        className="absolute top-4 right-4 z-30 p-2 rounded-full border border-border/30 text-muted-foreground hover:text-foreground hover:border-border/60 transition-colors bg-card/30 backdrop-blur-md"
+        aria-label="Sair"
+      >
+        <LogOut className="w-3.5 h-3.5" />
+      </motion.button>
+
       {/* Commercial module view OR Jarvis orb */}
       <AnimatePresence mode="wait">
         {activeModule && ActiveComponent ? (
