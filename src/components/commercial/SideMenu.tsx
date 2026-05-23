@@ -14,7 +14,6 @@ const icons: Record<string, any> = {
 const modules: { id: ModuleId; label: string }[] = [
   { id: "prospeccao", label: "Buscar Empresas" },
   { id: "empresas", label: "Empresas Prospectadas" },
-  { id: "qualificacao", label: "Qualificação de Leads" },
   { id: "mapa", label: "Mapa Regional" },
   { id: "segmentos", label: "Análise de Segmentos" },
   { id: "historico", label: "Histórico de Buscas" },
@@ -66,7 +65,7 @@ const SideMenu = ({ open, onClose, activeModule, onNavigate }: SideMenuProps) =>
           </div>
 
           <div className="px-4 py-2">
-            <p className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground/50">Prospecção</p>
+            <p className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground/50">Operações</p>
           </div>
 
           <div className="flex-1 overflow-y-auto px-3 space-y-0.5">
