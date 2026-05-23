@@ -192,7 +192,7 @@ const tools = [
 ];
 
 // === TOOL EXECUTION ===
-async function executeToolCall(name: string, args: Record<string, any>, sessionId?: string): Promise<string> {
+async function executeToolCall(name: string, args: Record<string, any>, sessionId?: string, userId?: string): Promise<string> {
   switch (name) {
     case "get_current_time": {
       const now = new Date();
@@ -202,6 +202,7 @@ async function executeToolCall(name: string, args: Record<string, any>, sessionI
     }
 
     case "create_reminder": {
+      if (!userId) return JSON.stringify({ error: "Usuário não autenticado." });
       const remindAt = new Date(Date.now() + (args.minutes_from_now || 30) * 60000);
       const resp = await fetch(`${SUPABASE_URL}/rest/v1/reminders`, {
         method: "POST",
@@ -212,7 +213,8 @@ async function executeToolCall(name: string, args: Record<string, any>, sessionI
           Prefer: "return=representation",
         },
         body: JSON.stringify({
-          session_id: sessionId || "default",
+          user_id: userId,
+          session_id: sessionId || userId,
           title: args.title,
           remind_at: remindAt.toISOString(),
         }),
@@ -222,8 +224,9 @@ async function executeToolCall(name: string, args: Record<string, any>, sessionI
     }
 
     case "list_reminders": {
+      if (!userId) return JSON.stringify({ reminders: [] });
       const resp = await fetch(
-        `${SUPABASE_URL}/rest/v1/reminders?session_id=eq.${args.session_id || sessionId}&completed=eq.false&order=remind_at.asc`,
+        `${SUPABASE_URL}/rest/v1/reminders?user_id=eq.${userId}&completed=eq.false&order=remind_at.asc`,
         { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } }
       );
       const data = await resp.json();
@@ -425,6 +428,20 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+    // Extract user from JWT (verify_jwt = false, so we parse manually)
+    let userId: string | undefined;
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      try {
+        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.45.0");
+        const authClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+          global: { headers: { Authorization: authHeader } },
+        });
+        const { data } = await authClient.auth.getUser();
+        userId = data?.user?.id;
+      } catch (e) { console.error("auth parse err", e); }
+    }
+
     const systemPrompt = `Você é o LUXIUM ASSISTANT, um assistente operacional inteligente, executivo institucional e consultor estratégico de vendas integrado ao sistema da Unimed Bauru.
 
 IDENTIDADE:
@@ -513,7 +530,7 @@ COMO ANALISAR DADOS:
 
       for (const tc of toolCalls) {
         const args = typeof tc.function.arguments === "string" ? JSON.parse(tc.function.arguments) : tc.function.arguments;
-        const result = await executeToolCall(tc.function.name, args, session_id);
+        const result = await executeToolCall(tc.function.name, args, session_id, userId);
         toolResults.push({ role: "tool", tool_call_id: tc.id, content: result });
       }
 
