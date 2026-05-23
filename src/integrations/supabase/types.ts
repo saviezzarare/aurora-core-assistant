@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           id: string
           role: string
+          user_id: string | null
         }
         Insert: {
           content: string
@@ -28,6 +29,7 @@ export type Database = {
           created_at?: string
           id?: string
           role: string
+          user_id?: string | null
         }
         Update: {
           content?: string
@@ -35,6 +37,7 @@ export type Database = {
           created_at?: string
           id?: string
           role?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -52,18 +55,48 @@ export type Database = {
           id: string
           session_id: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           session_id?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           session_id?: string
           updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -87,6 +120,7 @@ export type Database = {
           site: string | null
           telefone: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           cidade?: string | null
@@ -107,6 +141,7 @@ export type Database = {
           site?: string | null
           telefone?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           cidade?: string | null
@@ -127,6 +162,7 @@ export type Database = {
           site?: string | null
           telefone?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -140,6 +176,7 @@ export type Database = {
           segmento: string | null
           status: string | null
           total_encontrado: number | null
+          user_id: string | null
         }
         Insert: {
           cidade?: string | null
@@ -150,6 +187,7 @@ export type Database = {
           segmento?: string | null
           status?: string | null
           total_encontrado?: number | null
+          user_id?: string | null
         }
         Update: {
           cidade?: string | null
@@ -160,6 +198,7 @@ export type Database = {
           segmento?: string | null
           status?: string | null
           total_encontrado?: number | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -171,6 +210,7 @@ export type Database = {
           remind_at: string
           session_id: string
           title: string
+          user_id: string | null
         }
         Insert: {
           completed?: boolean
@@ -179,6 +219,7 @@ export type Database = {
           remind_at: string
           session_id: string
           title: string
+          user_id?: string | null
         }
         Update: {
           completed?: boolean
@@ -187,6 +228,7 @@ export type Database = {
           remind_at?: string
           session_id?: string
           title?: string
+          user_id?: string | null
         }
         Relationships: []
       }
