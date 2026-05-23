@@ -5,9 +5,9 @@ let speaking = false;
 let elevenLabsAvailable = true; // desabilita após falhas repetidas na sessão
 let consecutiveFailures = 0;
 
-const VOICE_ID =
-  (import.meta.env.VITE_ELEVENLABS_VOICE_ID as string | undefined) ||
-  "qSeXEcewz7tA0Q0qk9fH";
+// Voice ID é um identificador público (não é segredo).
+// A API key da ElevenLabs vive APENAS na edge function (Deno.env).
+const VOICE_ID = "qSeXEcewz7tA0Q0qk9fH";
 
 function sanitizeText(text: string) {
   return text
