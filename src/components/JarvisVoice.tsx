@@ -57,7 +57,6 @@ const JarvisVoice = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-  useEffect(() => {
     if (!user) return;
     loadConversationHistory();
     const interval = setInterval(checkReminders, 30000);
