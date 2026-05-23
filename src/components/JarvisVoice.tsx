@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MessageSquare, X, Menu, ArrowLeft, Send } from "lucide-react";
+import { Mic, MessageSquare, X, Menu, ArrowLeft, Send, LogOut } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import AuroraOrb from "./AuroraOrb";
 import FloatingParticles from "./FloatingParticles";
@@ -9,6 +9,7 @@ import AudioVisualizer from "./AudioVisualizer";
 import SideMenu from "./commercial/SideMenu";
 import { useAdaptiveTheme } from "@/hooks/useAdaptiveTheme";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { useAuth } from "@/hooks/useAuth";
 import { speak } from "@/lib/tts";
 import { streamChat } from "@/lib/chatApi";
 import { getSessionId } from "@/lib/sessionId";
@@ -38,6 +39,7 @@ const WAKE_WORD = "luxium";
 
 const JarvisVoice = () => {
   useAdaptiveTheme();
+  const { user, signOut } = useAuth();
 
   const [state, setState] = useState<"idle" | "listening" | "thinking" | "speaking">("idle");
   const [subtitle, setSubtitle] = useState("Toque na orb ou diga 'Luxium'");
@@ -67,11 +69,12 @@ const JarvisVoice = () => {
   }, [messages, currentResponse]);
 
   const loadConversationHistory = async () => {
+    if (!user) return;
     try {
       const { data: convos } = await supabase
         .from("conversations")
         .select("id")
-        .eq("session_id", sessionId.current)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(1);
 
@@ -93,11 +96,12 @@ const JarvisVoice = () => {
   };
 
   const saveMessage = async (role: string, content: string) => {
+    if (!user) return;
     try {
       let { data: convos } = await supabase
         .from("conversations")
         .select("id")
-        .eq("session_id", sessionId.current)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(1);
 
@@ -105,7 +109,7 @@ const JarvisVoice = () => {
       if (!convos || convos.length === 0) {
         const { data: newConvo } = await supabase
           .from("conversations")
-          .insert({ session_id: sessionId.current })
+          .insert({ session_id: sessionId.current, user_id: user.id })
           .select("id")
           .single();
         convoId = newConvo!.id;
@@ -114,18 +118,19 @@ const JarvisVoice = () => {
         await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", convoId);
       }
 
-      await supabase.from("chat_messages").insert({ conversation_id: convoId, role, content });
+      await supabase.from("chat_messages").insert({ conversation_id: convoId, role, content, user_id: user.id });
     } catch (e) {
       console.error("Error saving message:", e);
     }
   };
 
   const checkReminders = async () => {
+    if (!user) return;
     const now = new Date().toISOString();
     const { data } = await supabase
       .from("reminders")
       .select("*")
-      .eq("session_id", sessionId.current)
+      .eq("user_id", user.id)
       .eq("completed", false)
       .lte("remind_at", now);
 
