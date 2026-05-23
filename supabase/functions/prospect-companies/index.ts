@@ -13,40 +13,21 @@ interface ProspectBody {
   limit?: number;
 }
 
-// Regras 01-04 simplificadas
 function qualificar(nome: string, segmento: string, cidade: string) {
   let score = 40;
   const obs: string[] = [];
   const segLower = (segmento || "").toLowerCase();
 
-  // Regra 01: segmentos prioritários para Unimed (saúde, indústria, escritórios)
-  if (/sa[uú]de|cl[ií]nica|hospital|laborat[oó]rio|farm[aá]cia/.test(segLower)) {
-    score += 25; obs.push("Segmento saúde");
-  }
-  if (/ind[uú]stria|metal|fabrica|f[aá]brica/.test(segLower)) {
-    score += 15; obs.push("Indústria");
-  }
-  if (/escrit[oó]rio|advocacia|cont[aá]bil|consultor/.test(segLower)) {
-    score += 10; obs.push("Serviço profissional");
-  }
-
-  // Regra 02: cidade da carteira
-  if (/bauru|jaú|jau|len[çc][oó]is|agudos|pederneiras/i.test(cidade)) {
-    score += 15; obs.push("Cidade de carteira");
-  }
-
-  // Regra 03: nome com indicadores de porte (LTDA, S.A.)
-  if (/ltda|s\.?a\.?|me\b|epp/i.test(nome)) {
-    score += 5;
-  }
-
-  // Regra 04: cap em 100
+  if (/sa[uú]de|cl[ií]nica|hospital|laborat[oó]rio|farm[aá]cia/.test(segLower)) { score += 25; obs.push("Segmento saúde"); }
+  if (/ind[uú]stria|metal|fabrica|f[aá]brica/.test(segLower)) { score += 15; obs.push("Indústria"); }
+  if (/escrit[oó]rio|advocacia|cont[aá]bil|consultor/.test(segLower)) { score += 10; obs.push("Serviço profissional"); }
+  if (/bauru|jaú|jau|len[çc][oó]is|agudos|pederneiras/i.test(cidade)) { score += 15; obs.push("Cidade de carteira"); }
+  if (/ltda|s\.?a\.?|me\b|epp/i.test(nome)) { score += 5; }
   score = Math.min(100, score);
 
   let qualificacao = "frio";
   if (score >= 75) qualificacao = "quente";
   else if (score >= 55) qualificacao = "morno";
-
   return { score, qualificacao, observacoes: obs.join(" · ") };
 }
 
@@ -54,9 +35,30 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
     if (!FIRECRAWL_API_KEY) throw new Error("FIRECRAWL_API_KEY não configurada");
+
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // Authenticate caller
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Não autenticado" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData, error: userErr } = await authClient.auth.getUser();
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Sessão inválida" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userId = userData.user.id;
 
     const body = (await req.json()) as ProspectBody;
     const cidade = (body.cidade || "").trim();
@@ -68,20 +70,15 @@ Deno.serve(async (req) => {
     }
     const limit = Math.min(body.limit || 10, 20);
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // 1. Cria registro de busca
     const { data: searchRow } = await supabase
       .from("prospection_searches")
-      .insert({ cidade, estado: body.estado || "SP", segmento, filtros: { limit }, status: "executando" })
+      .insert({ user_id: userId, cidade, estado: body.estado || "SP", segmento, filtros: { limit }, status: "executando" })
       .select()
       .single();
     const searchId = searchRow?.id;
 
-    // 2. Firecrawl search
     const query = `${segmento} em ${cidade} ${body.estado || "SP"} site:.com.br OR site:.com`;
     const fcRes = await fetch("https://api.firecrawl.dev/v2/search", {
       method: "POST",
@@ -93,11 +90,11 @@ Deno.serve(async (req) => {
 
     const results: any[] = fcJson?.data?.web || fcJson?.data || fcJson?.results?.web || fcJson?.results || [];
 
-    // 3. Qualifica e salva
     const inserts = results.slice(0, limit).map((r: any) => {
       const nome = (r.title || r.url || "").replace(/\s*[-|–·].*$/, "").trim().slice(0, 200) || "Empresa";
       const q = qualificar(nome, segmento, cidade);
       return {
+        user_id: userId,
         nome,
         site: r.url || null,
         cidade,
