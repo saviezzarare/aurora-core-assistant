@@ -14,6 +14,35 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Require authentication to prevent credit drain by unauthenticated callers
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    try {
+      const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.45.0");
+      const authClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } },
+      );
+      const { data, error } = await authClient.auth.getUser();
+      if (error || !data?.user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } catch {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
     if (!API_KEY) {
       return new Response(

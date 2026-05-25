@@ -428,7 +428,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Extract user from JWT (verify_jwt = false, so we parse manually)
+    // Require authenticated user
     let userId: string | undefined;
     const authHeader = req.headers.get("Authorization");
     if (authHeader?.startsWith("Bearer ")) {
@@ -440,6 +440,12 @@ serve(async (req) => {
         const { data } = await authClient.auth.getUser();
         userId = data?.user?.id;
       } catch (e) { console.error("auth parse err", e); }
+    }
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const systemPrompt = `Você é o LUXIUM ASSISTANT, um assistente operacional inteligente de próxima geração — universal, contextual e executivo. Você atua como um copiloto pessoal e profissional, capaz de conversar sobre qualquer assunto e executar tarefas.
